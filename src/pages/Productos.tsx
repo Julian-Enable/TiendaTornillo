@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
-import { products, categories } from '../data/products'
+import { useState, useEffect, useMemo } from 'react'
+import { categories } from '../data/products'
 import type { Product } from '../data/products'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import Toast from '../components/Toast'
 import './Productos.css'
+import { getProducts } from '../services/productsService'
 
 function Productos() {
   const [selectedCategory, setSelectedCategory] = useState('Todos')
@@ -12,15 +13,25 @@ function Productos() {
   const [toast, setToast] = useState<{ show: boolean, message: string }>({ show: false, message: '' })
   const { addToCart } = useCart()
   const { isAuthenticated } = useAuth()
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    getProducts().then(prods => {
+      setProducts(prods)
+      setLoading(false)
+    })
+  }, [])
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchTerm.toLowerCase())
+        product.description.toLowerCase().includes(searchTerm.toLowerCase())
       return matchesCategory && matchesSearch
     })
-  }, [selectedCategory, searchTerm])
+  }, [selectedCategory, searchTerm, products])
 
   const handleAddToCart = (product: Product) => {
     if (!isAuthenticated) {
@@ -62,53 +73,58 @@ function Productos() {
         </div>
       </div>
 
-      <div className="products-grid">
-        {filteredProducts.map(product => (
-          <div key={product.id} className="product-card">
-            <div className="product-image">
-              <div className="placeholder-image">
-                {product.category.charAt(0)}
-              </div>
-            </div>
-            
-            <div className="product-info">
-              <h3>{product.name}</h3>
-              <p className="product-description">{product.description}</p>
-              
-              {product.specifications && (
-                <div className="product-specs">
-                  {product.specifications.size && (
-                    <span className="spec">Tamaño: {product.specifications.size}</span>
-                  )}
-                  {product.specifications.material && (
-                    <span className="spec">Material: {product.specifications.material}</span>
+      {loading ? (
+        <div className="no-products"><p>Cargando productos...</p></div>
+      ) : (
+        <>
+          <div className="products-grid">
+            {filteredProducts.map(product => (
+              <div key={product.id} className="product-card">
+                <div className="product-image">
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} style={{ maxWidth: 80, maxHeight: 80, borderRadius: '50%' }} />
+                  ) : (
+                    <div className="placeholder-image">
+                      {product.category.charAt(0)}
+                    </div>
                   )}
                 </div>
-              )}
-              
-              <div className="product-footer">
-                <div className="product-price">
-                  <span className="price">${product.price.toFixed(2)}</span>
-                  <span className="stock">Stock: {product.stock}</span>
+                <div className="product-info">
+                  <h3>{product.name}</h3>
+                  <p className="product-description">{product.description}</p>
+                  {product.specifications && (
+                    <div className="product-specs">
+                      {product.specifications.size && (
+                        <span className="spec">Tamaño: {product.specifications.size}</span>
+                      )}
+                      {product.specifications.material && (
+                        <span className="spec">Material: {product.specifications.material}</span>
+                      )}
+                    </div>
+                  )}
+                  <div className="product-footer">
+                    <div className="product-price">
+                      <span className="price">${product.price.toFixed(2)}</span>
+                      <span className="stock">Stock: {product.stock}</span>
+                    </div>
+                    <button
+                      className="add-to-cart-btn"
+                      onClick={() => handleAddToCart(product)}
+                      disabled={product.stock === 0}
+                    >
+                      {product.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito'}
+                    </button>
+                  </div>
                 </div>
-                
-                <button
-                  className="add-to-cart-btn"
-                  onClick={() => handleAddToCart(product)}
-                  disabled={product.stock === 0}
-                >
-                  {product.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito'}
-                </button>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {filteredProducts.length === 0 && (
-        <div className="no-products">
-          <p>No se encontraron productos con los filtros seleccionados.</p>
-        </div>
+          {filteredProducts.length === 0 && !loading && (
+            <div className="no-products">
+              <p>No se encontraron productos con los filtros seleccionados.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

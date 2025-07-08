@@ -1,8 +1,14 @@
-import { useState, ChangeEvent, FormEvent, useEffect } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { categories } from '../data/products'
 import type { Product } from '../data/products'
+import { addProduct } from '../services/productsService'
+// Eliminado: import { storage } from '../services/firebase'
+// Eliminado: import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+// Eliminada la lógica de subida de imágenes con Firebase Storage
+// Aquí irá la nueva lógica de la base de datos elegida
 
 interface NewProduct extends Omit<Product, 'id'> {
   imageFile?: File | null
@@ -36,6 +42,9 @@ export default function AgregarProducto() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [submitting, setSubmitting] = useState(false)
+  const [successMsg, setSuccessMsg] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     if (!isAuthenticated || !user?.isAdmin) {
@@ -81,7 +90,7 @@ export default function AgregarProducto() {
     if (!product.price || product.price <= 0) newErrors.price = 'El precio debe ser mayor a 0.'
     if (!product.stock || product.stock < 0) newErrors.stock = 'El stock no puede ser negativo.'
     if (!product.description) newErrors.description = 'La descripción es obligatoria.'
-    if (!product.specifications?.size) newErrors.size = 'El tamaño es obligatorio.'
+    // if (!product.specifications?.size) newErrors.size = 'El tamaño es obligatorio.' // Ya no es obligatorio
     if (!product.specifications?.material) newErrors.material = 'El material es obligatorio.'
     if (!product.specifications?.type) newErrors.type = 'El tipo es obligatorio.'
     if (!product.imageFile) newErrors.image = 'La imagen es obligatoria.'
@@ -89,19 +98,35 @@ export default function AgregarProducto() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    setSuccessMsg('')
+    setErrorMsg('')
     if (!validate()) return
-    // Simulación de guardado local
-    const newProduct: Product = {
-      ...product,
-      id: Date.now().toString(),
-      image: preview // Solo para demo, normalmente subirías la imagen y guardarías la URL
+    setSubmitting(true)
+    try {
+      let imageUrl = ''
+      // Eliminado: if (product.imageFile) {
+      // Eliminado:   const imageRef = ref(storage, `products/${Date.now()}_${product.imageFile.name}`)
+      // Eliminado:   await uploadBytes(imageRef, product.imageFile)
+      // Eliminado:   imageUrl = await getDownloadURL(imageRef)
+      // Eliminado: }
+      const newProduct: Omit<Product, 'id'> = {
+        ...product,
+        image: imageUrl,
+      }
+      await addProduct(newProduct)
+      setProduct(initialState)
+      setPreview('')
+      setErrors({})
+      setSuccessMsg('¡Producto agregado correctamente!')
+    } catch (err) {
+      setErrorMsg('Error al agregar el producto. Revisa la consola.')
+      // @ts-ignore
+      console.error('Error al agregar producto:', err?.message || err)
+    } finally {
+      setSubmitting(false)
     }
-    setProductos(arr => [...arr, newProduct])
-    setProduct(initialState)
-    setPreview('')
-    alert('Producto agregado correctamente (solo local)')
   }
 
   return (
@@ -145,7 +170,20 @@ export default function AgregarProducto() {
               </div>
             )}
           </div>
-          <input name="type" placeholder="Tipo (ej: Phillips, Allen)" value={product.specifications?.type || ''} onChange={handleChange} style={{ width: '100%', marginBottom: 10, padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
+          <input
+            name="type"
+            placeholder="Tipo (ej: Phillips, Allen)"
+            value={product.specifications?.type || ''}
+            onChange={handleChange}
+            style={{ width: '100%', marginBottom: 10, padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }}
+          />
+          <input
+            name="material"
+            placeholder="Material (ej: Acero, Inoxidable)"
+            value={product.specifications?.material || ''}
+            onChange={handleChange}
+            style={{ width: '100%', marginBottom: 10, padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }}
+          />
           <div style={{ marginBottom: 10, textAlign: 'left' }}>
             <label style={{ fontSize: 13, color: '#555', fontWeight: 600, marginBottom: 4, display: 'block' }}>Imagen del producto</label>
             <input type="file" accept="image/*" onChange={handleImage} style={{ marginBottom: 6 }} />
@@ -154,8 +192,16 @@ export default function AgregarProducto() {
           <div style={{ color: 'red', marginBottom: 10, minHeight: 18 }}>
             {Object.values(errors).map((err, i) => <div key={i}>{err}</div>)}
           </div>
+          <div style={{ color: 'green', marginBottom: 10, minHeight: 18 }}>
+            {successMsg}
+          </div>
+          <div style={{ color: 'red', marginBottom: 10, minHeight: 18 }}>
+            {errorMsg}
+          </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button type="submit" style={{ background: '#ffd700', color: '#222', fontWeight: 700, padding: '12px 0', border: 'none', borderRadius: 8, flex: 1, fontSize: 17, boxShadow: '0 2px 8px rgba(255,215,0,0.10)', transition: 'background 0.2s' }}>Agregar</button>
+            <button type="submit" style={{ background: '#ffd700', color: '#222', fontWeight: 700, padding: '12px 0', border: 'none', borderRadius: 8, flex: 1, fontSize: 17, boxShadow: '0 2px 8px rgba(255,215,0,0.10)', transition: 'background 0.2s' }} disabled={submitting}>
+              {submitting ? 'Agregando...' : 'Agregar'}
+            </button>
             <button type="button" style={{ background: '#ccc', color: '#222', fontWeight: 700, padding: '12px 0', border: 'none', borderRadius: 8, flex: 1, fontSize: 17, boxShadow: '0 2px 8px rgba(26,26,46,0.06)', transition: 'background 0.2s' }} onClick={() => { setProduct(initialState); setPreview(''); setErrors({}) }}>Cancelar</button>
           </div>
         </form>

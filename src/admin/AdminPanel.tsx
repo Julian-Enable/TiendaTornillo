@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { products as initialProducts, categories } from '../data/products'
+import { useState, useEffect } from 'react'
+import { categories } from '../data/products'
 import type { Product } from '../data/products'
+import { getProducts, deleteProduct, updateProduct, addProduct } from '../services/productsService'
 
 interface Props {
   onLogout: () => void
@@ -19,10 +20,22 @@ function emptyProduct(): Product {
 }
 
 function AdminPanel({ onLogout }: Props) {
-  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [products, setProducts] = useState<Product[]>([])
   const [editing, setEditing] = useState<Product | null>(null)
   const [form, setForm] = useState<Product>(emptyProduct())
   const [showForm, setShowForm] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
+
+  useEffect(() => {
+    setLoading(true)
+    getProducts().then(prods => {
+      setProducts(prods)
+      setLoading(false)
+    })
+  }, [])
 
   const handleEdit = (product: Product) => {
     setEditing(product)
@@ -30,8 +43,17 @@ function AdminPanel({ onLogout }: Props) {
     setShowForm(true)
   }
 
-  const handleDelete = (id: string) => {
-    setProducts(products.filter(p => p.id !== id))
+  const handleDelete = async (id: string) => {
+    setErrorMsg('')
+    setSuccessMsg('')
+    try {
+      await deleteProduct(id)
+      setSuccessMsg('Producto eliminado correctamente')
+    } catch (err) {
+      setErrorMsg('Error al eliminar el producto')
+      // @ts-ignore
+      console.error('Error al eliminar producto:', err?.message || err)
+    }
   }
 
   const handleAdd = () => {
@@ -49,16 +71,29 @@ function AdminPanel({ onLogout }: Props) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (editing) {
-      setProducts(products.map(p => p.id === editing.id ? { ...form, id: editing.id } : p))
-    } else {
-      setProducts([{ ...form, id: Date.now().toString() }, ...products])
+    setErrorMsg('')
+    setSuccessMsg('')
+    setSubmitting(true)
+    try {
+      if (editing) {
+        await updateProduct(editing.id, { ...form })
+        setSuccessMsg('Producto actualizado correctamente')
+      } else {
+        await addProduct({ ...form, id: undefined })
+        setSuccessMsg('Producto agregado correctamente')
+      }
+      setShowForm(false)
+      setEditing(null)
+      setForm(emptyProduct())
+    } catch (err) {
+      setErrorMsg('Error al guardar el producto')
+      // @ts-ignore
+      console.error('Error al guardar producto:', err?.message || err)
+    } finally {
+      setSubmitting(false)
     }
-    setShowForm(false)
-    setEditing(null)
-    setForm(emptyProduct())
   }
 
   return (
@@ -68,31 +103,40 @@ function AdminPanel({ onLogout }: Props) {
         Cerrar sesión admin
       </button>
       <h2>Gestión de Productos</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20 }}>
-        <thead>
-          <tr style={{ background: '#f8f9fa' }}>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map(p => (
-            <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
-              <td>{p.name}</td>
-              <td>{p.category}</td>
-              <td>${p.price.toFixed(2)}</td>
-              <td>{p.stock}</td>
-              <td>
-                <button onClick={() => handleEdit(p)} style={{ marginRight: 8, background: '#1a1a2e', color: '#ffd700', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer' }}>Editar</button>
-                <button onClick={() => handleDelete(p.id)} style={{ background: '#ff4444', color: 'white', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer' }}>Eliminar</button>
-              </td>
+      <button onClick={handleAdd} style={{ marginBottom: 20, background: '#1a1a2e', color: '#ffd700', fontWeight: 'bold', border: 'none', borderRadius: 8, padding: '0.5rem 1.5rem', cursor: 'pointer' }}>
+        Agregar Producto
+      </button>
+      <div style={{ color: 'green', marginBottom: 10 }}>{successMsg}</div>
+      <div style={{ color: 'red', marginBottom: 10 }}>{errorMsg}</div>
+      {loading ? (
+        <div>Cargando productos...</div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20 }}>
+          <thead>
+            <tr style={{ background: '#f8f9fa' }}>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {products.map(p => (
+              <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                <td>{p.name}</td>
+                <td>{p.category}</td>
+                <td>${p.price.toFixed(2)}</td>
+                <td>{p.stock}</td>
+                <td>
+                  <button onClick={() => handleEdit(p)} style={{ marginRight: 8, background: '#1a1a2e', color: '#ffd700', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer' }}>Editar</button>
+                  <button onClick={() => handleDelete(p.id)} style={{ background: '#ff4444', color: 'white', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer' }}>Eliminar</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {showForm && (
         <div style={{ marginTop: 30, background: '#f8f9fa', padding: 20, borderRadius: 10 }}>
           <h3>{editing ? 'Editar Producto' : 'Agregar Producto'}</h3>
@@ -107,7 +151,7 @@ function AdminPanel({ onLogout }: Props) {
             <input name="spec_size" value={form.specifications?.size || ''} onChange={handleChange} placeholder="Tamaño" style={{ flex: '1 1 100px', padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
             <input name="spec_material" value={form.specifications?.material || ''} onChange={handleChange} placeholder="Material" style={{ flex: '1 1 100px', padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
             <input name="spec_type" value={form.specifications?.type || ''} onChange={handleChange} placeholder="Tipo" style={{ flex: '1 1 100px', padding: 8, borderRadius: 6, border: '1px solid #ccc' }} />
-            <button type="submit" style={{ background: '#ffd700', color: '#1a1a2e', fontWeight: 'bold', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', cursor: 'pointer', marginTop: 10 }}>{editing ? 'Guardar Cambios' : 'Agregar'}</button>
+            <button type="submit" style={{ background: '#ffd700', color: '#1a1a2e', fontWeight: 'bold', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', cursor: 'pointer', marginTop: 10 }} disabled={submitting}>{submitting ? 'Guardando...' : (editing ? 'Guardar Cambios' : 'Agregar')}</button>
             <button type="button" onClick={() => setShowForm(false)} style={{ background: '#ccc', color: '#222', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', cursor: 'pointer', marginTop: 10 }}>Cancelar</button>
           </form>
         </div>
