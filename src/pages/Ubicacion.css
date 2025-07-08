@@ -1,6 +1,6 @@
 /* Estilos para la página de Ubicación */
 .ubicacion-container {
-  max-width: 600px;
+  max-width: 1100px;
   margin: 40px auto;
   background: #fff;
   border-radius: 16px;
@@ -14,11 +14,22 @@
   margin-bottom: 24px;
 }
 
+.ubicacion-main-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
 .mapa-container {
-  margin-bottom: 24px;
+  flex: 1 1 420px;
+  min-width: 320px;
+  max-width: 520px;
+  margin-bottom: 0;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(26,26,46,0.10);
+  background: #fff;
 }
 
 .ubicacion-botones {
@@ -66,4 +77,16 @@
 .btn-waze:hover {
   background: #128c7e;
   transform: translateY(-2px) scale(1.04);
+} 
+
+/* Responsive */
+@media (max-width: 900px) {
+  .ubicacion-main-row {
+    flex-direction: column;
+    gap: 24px;
+  }
+  .mapa-container, .google-reviews-container {
+    max-width: 100%;
+    margin: 0 auto;
+  }
 } 

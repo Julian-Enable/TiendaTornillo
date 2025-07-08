@@ -5,11 +5,13 @@ interface User {
   id: string
   name: string
   email: string
+  isAdmin?: boolean
 }
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
+  isAdmin: boolean
   login: (email: string, password: string) => Promise<boolean>
   register: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
@@ -23,10 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     // Simulación de login - en producción esto sería una llamada a la API
     if (email && password) {
+      const isAdmin = email === 'admin@admin.com'
       const mockUser: User = {
         id: '1',
-        name: 'Usuario Demo',
-        email: email
+        name: isAdmin ? 'Administrador' : 'Usuario Demo',
+        email: email,
+        isAdmin
       }
       setUser(mockUser)
       localStorage.setItem('user', JSON.stringify(mockUser))
@@ -66,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
+    isAdmin: !!user?.isAdmin,
     login,
     register,
     logout

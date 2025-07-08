@@ -42,7 +42,7 @@ function Contacto() {
       <h1>Contacto</h1>
       <div className="contacto-info">
         <p><strong>Teléfono:</strong> +57 3208555718</p>
-        <p><strong>Email:</strong> contacto@tutienda.com</p>
+        <p><strong>Email:</strong> universal.tornillos@gmail.com</p>
         <p><strong>Dirección:</strong> Cl. 7 #28 09, Los Mártires, Bogotá, Cundinamarca</p>
         <p><strong>Horario:</strong> Lunes a Viernes, 8:00am - 6:00pm</p>
       </div>

@@ -1,0 +1,135 @@
+.google-reviews-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(60,64,67,0.15);
+  padding: 24px 28px;
+  max-width: 420px;
+  font-family: 'Roboto', Arial, sans-serif;
+  color: #202124;
+}
+
+.google-reviews-header h2 {
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  letter-spacing: 0.01em;
+}
+
+.google-reviews-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.google-reviews-rating {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #202124;
+}
+
+.google-reviews-stars .star,
+.google-review-stars .star {
+  color: #e3e3e3;
+  font-size: 1.1rem;
+  margin-right: 1px;
+}
+
+.google-reviews-stars .star.filled,
+.google-review-stars .star.filled {
+  color: #fbbc04;
+}
+
+.google-reviews-stars .star.half {
+  color: #fbbc04;
+  position: relative;
+}
+
+.google-reviews-count {
+  color: #5f6368;
+  font-size: 1rem;
+  margin-left: 2px;
+}
+
+.google-reviews-subtitle {
+  color: #5f6368;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.google-reviews-list {
+  margin-top: 18px;
+}
+
+.google-review {
+  border-top: 1px solid #ececec;
+  padding: 18px 0 10px 0;
+}
+
+.google-review:first-child {
+  border-top: none;
+}
+
+.google-review-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.google-review-avatar {
+  width: 36px;
+  height: 36px;
+  background: #e3e3e3;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: #5f6368;
+}
+
+.google-review-name {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.google-review-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.google-review-stars-inline {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.google-review-stars-inline .star {
+  color: #e3e3e3;
+  font-size: 1.05rem;
+  margin-right: 1px;
+}
+
+.google-review-stars-inline .star.filled {
+  color: #fbbc04;
+}
+
+.google-review-time {
+  color: #5f6368;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.google-review-stars {
+  margin: 2px 0 4px 0;
+}
+
+.google-review-comment {
+  font-size: 1rem;
+  color: #202124;
+  margin-top: 6px;
+  text-align: left;
+} 

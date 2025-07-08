@@ -40,7 +40,7 @@ function Productos() {
       </div>
 
       <div className="filters-section">
-        <div className="search-box">
+        <div className="search-box search-box-destacado">
           <input
             type="text"
             placeholder="Buscar productos..."

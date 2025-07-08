@@ -23,19 +23,25 @@ const initialState: NewProduct = {
   imageFile: null
 }
 
+// Lista de medidas sugeridas (puedes ampliarla según tus productos)
+const medidasDisponibles = [
+  '1/4"', '3/8"', '1/2"', '5/16"', '2"', '16oz', '24"', '25ft', '7-1/4"', '12AWG', '15A', '1.5mm - 10mm', '#2', '4x4"'
+]
+
 export default function AgregarProducto() {
   const [product, setProduct] = useState<NewProduct>(initialState)
   const [preview, setPreview] = useState<string>('')
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [productos, setProductos] = useState<Product[]>([])
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user?.isAdmin) {
       navigate('/admin')
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, user, navigate])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -53,6 +59,20 @@ export default function AgregarProducto() {
       setPreview(URL.createObjectURL(file))
     }
   }
+
+  // Manejar selección de medidas
+  const handleSizeCheck = (size: string) => {
+    setSelectedSizes(prev =>
+      prev.includes(size)
+        ? prev.filter(s => s !== size)
+        : [...prev, size]
+    )
+  }
+
+  // Actualizar el campo size en el producto cuando cambian los checks
+  useEffect(() => {
+    setProduct(p => ({ ...p, specifications: { ...p.specifications, size: selectedSizes.join(', ') } }))
+  }, [selectedSizes])
 
   const validate = () => {
     const newErrors: {[key: string]: string} = {}
@@ -85,43 +105,61 @@ export default function AgregarProducto() {
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '2rem auto', background: '#fff', padding: 24, borderRadius: 8 }}>
-      <h2>Agregar Producto</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input name="name" placeholder="Nombre del producto" value={product.name} onChange={handleChange} style={{ flex: 2 }} />
-          <select name="category" value={product.category} onChange={handleChange} style={{ flex: 1 }}>
-            {categories.filter(c => c !== 'Todos').map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 13, color: '#555' }}>Precio (COP)</label>
-            <input name="price" type="number" placeholder="Precio del producto" value={product.price} onChange={handleChange} min={0} />
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(120deg, #f8fafc 0%, #e9ecf4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ maxWidth: 480, width: '100%', background: '#fff', borderRadius: 20, boxShadow: '0 8px 32px rgba(26,26,46,0.13)', padding: '40px 32px', margin: '40px 0' }}>
+        <button onClick={() => navigate('/admin')} style={{ marginBottom: 18, background: '#1a1a2e', color: '#ffd700', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 700, fontSize: 15, cursor: 'pointer', float: 'right' }}>← Volver al Panel</button>
+        <h2 style={{ color: '#1a1a2e', fontWeight: 800, fontSize: '2rem', marginBottom: 24, textAlign: 'center', letterSpacing: '-1px', clear: 'both' }}>Agregar Producto</h2>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+            <input name="name" placeholder="Nombre del producto" value={product.name} onChange={handleChange} style={{ flex: 2, padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
+            <select name="category" value={product.category} onChange={handleChange} style={{ flex: 1, padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }}>
+              {categories.filter(c => c !== 'Todos').map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
           </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 13, color: '#555' }}>Cantidad en stock</label>
-            <input name="stock" type="number" placeholder="Cantidad disponible" value={product.stock} onChange={handleChange} min={0} />
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>Precio (COP)</label>
+              <input name="price" type="number" placeholder="Precio del producto" value={product.price} onChange={handleChange} min={0} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>Cantidad en stock</label>
+              <input name="stock" type="number" placeholder="Cantidad disponible" value={product.stock} onChange={handleChange} min={0} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
+            </div>
           </div>
-        </div>
-        <textarea name="description" placeholder="Descripción" value={product.description} onChange={handleChange} style={{ width: '100%', marginBottom: 12 }} />
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input name="size" placeholder='Tamaño (ej: 1/2" o 16oz)' value={product.specifications?.size || ''} onChange={handleChange} style={{ flex: 1 }} />
-          <input name="material" placeholder="Material (ej: Acero)" value={product.specifications?.material || ''} onChange={handleChange} style={{ flex: 1 }} />
-        </div>
-        <input name="type" placeholder="Tipo (ej: Phillips, Allen)" value={product.specifications?.type || ''} onChange={handleChange} style={{ width: '100%', marginBottom: 12 }} />
-        <div style={{ marginBottom: 12 }}>
-          <input type="file" accept="image/*" onChange={handleImage} />
-          {preview && <img src={preview} alt="Vista previa" style={{ maxWidth: 120, marginTop: 8, borderRadius: 4 }} />}
-        </div>
-        <div style={{ color: 'red', marginBottom: 12 }}>
-          {Object.values(errors).map((err, i) => <div key={i}>{err}</div>)}
-        </div>
-        <button type="submit" style={{ background: '#ffd700', color: '#222', fontWeight: 600, padding: '8px 24px', border: 'none', borderRadius: 6, marginRight: 8 }}>Agregar</button>
-        <button type="button" style={{ background: '#ccc', color: '#222', fontWeight: 600, padding: '8px 24px', border: 'none', borderRadius: 6 }} onClick={() => { setProduct(initialState); setPreview(''); setErrors({}) }}>Cancelar</button>
-      </form>
+          <textarea name="description" placeholder="Descripción" value={product.description} onChange={handleChange} style={{ width: '100%', marginBottom: 10, padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15, minHeight: 60 }} />
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontWeight: 600, color: '#16213e', marginBottom: 6, display: 'block' }}>Medidas disponibles:</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#f8f9fa', borderRadius: 8, padding: '10px 12px', border: '1.5px solid #1a1a2e' }}>
+              {medidasDisponibles.map(size => (
+                <label key={size} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 500, color: '#1a1a2e', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={selectedSizes.includes(size)} onChange={() => handleSizeCheck(size)} style={{ accentColor: '#ffd700', width: 18, height: 18 }} />
+                  {size}
+                </label>
+              ))}
+            </div>
+            {selectedSizes.length > 0 && (
+              <div style={{ marginTop: 6, fontSize: 14, color: '#1a1a2e' }}>
+                Seleccionadas: {selectedSizes.join(', ')}
+              </div>
+            )}
+          </div>
+          <input name="type" placeholder="Tipo (ej: Phillips, Allen)" value={product.specifications?.type || ''} onChange={handleChange} style={{ width: '100%', marginBottom: 10, padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
+          <div style={{ marginBottom: 10, textAlign: 'left' }}>
+            <label style={{ fontSize: 13, color: '#555', fontWeight: 600, marginBottom: 4, display: 'block' }}>Imagen del producto</label>
+            <input type="file" accept="image/*" onChange={handleImage} style={{ marginBottom: 6 }} />
+            {preview && <img src={preview} alt="Vista previa" style={{ maxWidth: 120, marginTop: 8, borderRadius: 8, boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }} />}
+          </div>
+          <div style={{ color: 'red', marginBottom: 10, minHeight: 18 }}>
+            {Object.values(errors).map((err, i) => <div key={i}>{err}</div>)}
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button type="submit" style={{ background: '#ffd700', color: '#222', fontWeight: 700, padding: '12px 0', border: 'none', borderRadius: 8, flex: 1, fontSize: 17, boxShadow: '0 2px 8px rgba(255,215,0,0.10)', transition: 'background 0.2s' }}>Agregar</button>
+            <button type="button" style={{ background: '#ccc', color: '#222', fontWeight: 700, padding: '12px 0', border: 'none', borderRadius: 8, flex: 1, fontSize: 17, boxShadow: '0 2px 8px rgba(26,26,46,0.06)', transition: 'background 0.2s' }} onClick={() => { setProduct(initialState); setPreview(''); setErrors({}) }}>Cancelar</button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 } 
