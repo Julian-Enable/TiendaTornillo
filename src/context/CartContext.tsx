@@ -110,7 +110,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         `- ${item.product.name}%0A  Cantidad: ${item.quantity} | Precio: $${(item.product.price * item.quantity).toFixed(2)}%0A`
       ).join('%0A') +
       `%0ATotal: $${getTotalPrice().toFixed(2)}`
-    const whatsappUrl = `https://wa.me/573212441930?text=${message}`
+    const whatsappUrl = `https://wa.me/573208555718?text=${message}`
     window.open(whatsappUrl, '_blank')
   }
 

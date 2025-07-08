@@ -1,0 +1,69 @@
+/* Estilos para la página de Ubicación */
+.ubicacion-container {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(26,26,46,0.08);
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.ubicacion-container h1 {
+  color: #1a1a2e;
+  margin-bottom: 24px;
+}
+
+.mapa-container {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(26,26,46,0.10);
+}
+
+.ubicacion-botones {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.btn-maps, .btn-waze {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 16px 32px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(26,26,46,0.12);
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.btn-maps svg, .btn-waze svg {
+  width: 28px;
+  height: 28px;
+  display: inline-block;
+}
+
+.btn-maps:hover {
+  background: #16213e;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.btn-waze {
+  background: #25d366;
+  color: #fff;
+}
+
+.btn-waze:hover {
+  background: #128c7e;
+  transform: translateY(-2px) scale(1.04);
+} 
