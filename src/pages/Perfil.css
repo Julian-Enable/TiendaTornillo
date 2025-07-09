@@ -9,14 +9,16 @@
 }
 
 .perfil-header h1 {
-  color: #1a1a2e;
+  color: #fff;
   font-size: 2.5rem;
   margin-bottom: 1rem;
+  text-shadow: 0 2px 12px #0a1026, 0 1px 0 #222;
 }
 
 .perfil-header p {
-  color: #666;
+  color: #e0e0e0;
   font-size: 1.1rem;
+  text-shadow: 0 1px 8px #0a1026;
 }
 
 .auth-required {
@@ -28,8 +30,9 @@
 }
 
 .auth-required h2 {
-  color: #1a1a2e;
+  color: #fff;
   margin-bottom: 2rem;
+  text-shadow: 0 1px 6px #0a1026, 0 1px 0 #222;
 }
 
 .login-link {
@@ -61,11 +64,12 @@
 }
 
 .perfil-card h2 {
-  color: #1a1a2e;
+  color: #fff;
   margin-bottom: 1.5rem;
   font-size: 1.3rem;
   border-bottom: 2px solid #f0f0f0;
   padding-bottom: 0.5rem;
+  text-shadow: 0 1px 6px #0a1026, 0 1px 0 #222;
 }
 
 .info-group {
@@ -82,11 +86,13 @@
 
 .info-group label {
   font-weight: 500;
-  color: #1a1a2e;
+  color: #fff;
+  text-shadow: 0 1px 6px #0a1026;
 }
 
 .info-group span {
-  color: #666;
+  color: #e0e0e0;
+  text-shadow: 0 1px 6px #0a1026;
 }
 
 .activity-summary {
@@ -166,7 +172,8 @@
 .empty-history {
   text-align: center;
   padding: 2rem;
-  color: #666;
+  color: #b0b0b0;
+  text-shadow: 0 1px 8px #0a1026;
 }
 
 .empty-history p {

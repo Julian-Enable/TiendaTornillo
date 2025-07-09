@@ -2,6 +2,8 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .main-content {
@@ -10,6 +12,8 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
+  z-index: 2;
 }
 
 .footer {
@@ -17,6 +21,8 @@
   color: white;
   padding: 1rem 0;
   margin-top: auto;
+  position: relative;
+  z-index: 2;
 }
 
 .footer-content {
@@ -24,4 +30,10 @@
   margin: 0 auto;
   padding: 0 2rem;
   text-align: center;
+} 
+
+/* Navbar debe estar por encima del canvas */
+.navbar {
+  position: relative;
+  z-index: 3;
 } 

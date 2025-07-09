@@ -9,14 +9,16 @@
 }
 
 .productos-header h1 {
-  color: #1a1a2e;
+  color: #fff;
   font-size: 2.5rem;
   margin-bottom: 1rem;
+  text-shadow: 0 2px 12px #0a1026, 0 1px 0 #222;
 }
 
 .productos-header p {
-  color: #666;
+  color: #e0e0e0;
   font-size: 1.1rem;
+  text-shadow: 0 1px 8px #0a1026;
 }
 
 .filters-section {
@@ -142,15 +144,17 @@
 }
 
 .product-info h3 {
-  color: #1a1a2e;
+  color: #fff;
   margin-bottom: 0.5rem;
   font-size: 1.2rem;
+  text-shadow: 0 1px 6px #0a1026, 0 1px 0 #222;
 }
 
 .product-description {
-  color: #666;
+  color: #e0e0e0;
   margin-bottom: 1rem;
   line-height: 1.5;
+  text-shadow: 0 1px 6px #0a1026;
 }
 
 .product-specs {
@@ -216,9 +220,10 @@
 }
 
 .no-products {
+  color: #b0b0b0;
   text-align: center;
-  padding: 3rem;
-  color: #666;
+  font-size: 1.1rem;
+  text-shadow: 0 1px 8px #0a1026;
 }
 
 .redesigned-filters {

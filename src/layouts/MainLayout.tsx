@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import './MainLayout.css'
+import UniverseBackground from '../components/UniverseBackground'
 
 function MainLayout() {
   return (
     <div className="layout">
+      <UniverseBackground />
       <Navbar />
       <main className="main-content">
         <Outlet />
