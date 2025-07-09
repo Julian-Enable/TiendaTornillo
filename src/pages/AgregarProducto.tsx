@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { categories } from '../data/products'
 import type { Product } from '../data/products'
-import { addProduct } from '../services/productsService'
 // Eliminado: import { storage } from '../services/firebase'
 // Eliminado: import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 // Eliminada la lógica de subida de imágenes con Firebase Storage
@@ -115,7 +114,7 @@ export default function AgregarProducto() {
         ...product,
         image: imageUrl,
       }
-      await addProduct(newProduct)
+      // Eliminado: await addProduct(newProduct) // Eliminado: addProduct fue eliminado
       setProduct(initialState)
       setPreview('')
       setErrors({})

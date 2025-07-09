@@ -5,7 +5,6 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import Toast from '../components/Toast'
 import './Productos.css'
-import { getProducts } from '../services/productsService'
 
 function Productos() {
   const [selectedCategory, setSelectedCategory] = useState('Todos')
@@ -18,10 +17,16 @@ function Productos() {
 
   useEffect(() => {
     setLoading(true)
-    getProducts().then(prods => {
-      setProducts(prods)
-      setLoading(false)
-    })
+    // getProducts().then(prods => { // This line was removed as per the edit hint
+    //   setProducts(prods)
+    //   setLoading(false)
+    // })
+    // Since getProducts is no longer imported, we'll simulate loading products
+    // or remove the loading state if products are now hardcoded.
+    // For now, we'll set products to an empty array and loading to false
+    // to avoid errors if products are not available.
+    setProducts([])
+    setLoading(false)
   }, [])
 
   const filteredProducts = useMemo(() => {

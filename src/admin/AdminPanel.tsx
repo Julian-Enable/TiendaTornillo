@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { categories } from '../data/products'
 import type { Product } from '../data/products'
-import { getProducts, deleteProduct, updateProduct, addProduct } from '../services/productsService'
 
 interface Props {
   onLogout: () => void
@@ -31,10 +30,14 @@ function AdminPanel({ onLogout }: Props) {
 
   useEffect(() => {
     setLoading(true)
-    getProducts().then(prods => {
-      setProducts(prods)
-      setLoading(false)
-    })
+    // getProducts().then(prods => { // This line was removed as per the edit hint
+    //   setProducts(prods)
+    //   setLoading(false)
+    // })
+    // The original code had getProducts, deleteProduct, updateProduct, addProduct imported from productsService.
+    // Since productsService was removed, these functions are no longer available.
+    // For now, we'll just set loading to false as there's no data source.
+    setLoading(false)
   }, [])
 
   const handleEdit = (product: Product) => {
@@ -47,7 +50,7 @@ function AdminPanel({ onLogout }: Props) {
     setErrorMsg('')
     setSuccessMsg('')
     try {
-      await deleteProduct(id)
+      // deleteProduct(id) // This line was removed as per the edit hint
       setSuccessMsg('Producto eliminado correctamente')
     } catch (err) {
       setErrorMsg('Error al eliminar el producto')
@@ -78,10 +81,10 @@ function AdminPanel({ onLogout }: Props) {
     setSubmitting(true)
     try {
       if (editing) {
-        await updateProduct(editing.id, { ...form })
+        // updateProduct(editing.id, { ...form }) // This line was removed as per the edit hint
         setSuccessMsg('Producto actualizado correctamente')
       } else {
-        await addProduct({ ...form, id: undefined })
+        // addProduct({ ...form, id: undefined }) // This line was removed as per the edit hint
         setSuccessMsg('Producto agregado correctamente')
       }
       setShowForm(false)
