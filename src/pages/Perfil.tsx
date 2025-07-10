@@ -40,35 +40,35 @@ function Perfil() {
         <p>Gestiona tu cuenta y revisa tu información</p>
       </div>
       <div className="perfil-content">
-        <div className="perfil-card">
+        <div className="perfil-section">
           <h2>Información Personal</h2>
           <div className="info-group">
-            <label>Nombre:</label>
-            <span>{user.name}</span>
+            <span className="perfil-label">Nombre:</span>
+            <span className="perfil-value">{user.name}</span>
           </div>
           <div className="info-group">
-            <label>Email:</label>
-            <span>{user.email}</span>
+            <span className="perfil-label">Email:</span>
+            <span className="perfil-value">{user.email}</span>
           </div>
           <div className="info-group">
-            <label>ID de Usuario:</label>
-            <span>{user.id}</span>
+            <span className="perfil-label">ID de Usuario:</span>
+            <span className="perfil-value">{user.id}</span>
           </div>
         </div>
-        <div className="perfil-card">
+        <div className="perfil-section">
           <h2>Resumen de Actividad</h2>
           <div className="activity-summary">
             <div className="activity-item">
-              <span className="activity-label">Productos en Carrito:</span>
-              <span className="activity-value">{getTotalItems()}</span>
+              <span className="perfil-label">Productos en Carrito:</span>
+              <span className="perfil-value">{getTotalItems()}</span>
             </div>
             <div className="activity-item">
-              <span className="activity-label">Productos Diferentes:</span>
-              <span className="activity-value">{items.length}</span>
+              <span className="perfil-label">Productos Diferentes:</span>
+              <span className="perfil-value">{items.length}</span>
             </div>
           </div>
         </div>
-        <div className="perfil-card">
+        <div className="perfil-section">
           <h2>Acciones</h2>
           <div className="perfil-actions">
             <button className="action-btn primary">
@@ -82,7 +82,7 @@ function Perfil() {
             </button>
           </div>
         </div>
-        <div className="perfil-card">
+        <div className="perfil-section">
           <h2>Mis Cotizaciones Guardadas</h2>
           {quotations.length === 0 ? (
             <div className="empty-history">

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import './Navbar.css'
+import { useState } from 'react'
 
 function CartIcon() {
   return (
@@ -22,6 +23,7 @@ function LogoutIcon() {
 function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
   const { getTotalItems } = useCart()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <nav className="navbar">
@@ -29,8 +31,60 @@ function Navbar() {
         <Link to="/" className="navbar-logo">
           Tienda de Tornillos
         </Link>
-        
-        <ul className="nav-menu">
+        <button className="hamburger-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú de navegación" style={{ display: 'flex' }}>
+          <span className="hamburger-bar"></span>
+          <span className="hamburger-bar"></span>
+          <span className="hamburger-bar"></span>
+        </button>
+        {menuOpen && (
+          <div className="hamburger-backdrop" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú" />
+        )}
+        <div className={`hamburger-menu-panel${menuOpen ? ' open' : ''}`}> 
+          <ul className="nav-menu">
+            <li className="nav-item">
+              <Link to="/" className="nav-link" aria-label="Ir a inicio" onClick={() => setMenuOpen(false)}>Inicio</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/productos" className="nav-link" aria-label="Ver productos" onClick={() => setMenuOpen(false)}>Productos</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/contacto" className="nav-link" aria-label="Ir a contacto" onClick={() => setMenuOpen(false)}>Contacto</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/sobre-nosotros" className="nav-link" aria-label="Sobre nosotros" onClick={() => setMenuOpen(false)}>Sobre Nosotros</Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/ubicacion" className="nav-link" aria-label="Ver ubicación" onClick={() => setMenuOpen(false)}>Ubicación</Link>
+            </li>
+          </ul>
+          <div className="nav-auth nav-auth-mobile">
+            {isAuthenticated ? (
+              <>
+                <Link to="/perfil" className="nav-link" title="Mi Perfil" aria-label="Ir a mi perfil" onClick={() => setMenuOpen(false)}>
+                  <UserIcon />
+                  <span className="user-name">Hola, {user?.name}</span>
+                </Link>
+                <button onClick={() => { logout(); setMenuOpen(false); }} className="nav-link logout-btn" title="Cerrar Sesión" aria-label="Cerrar sesión">
+                  <LogoutIcon />
+                  Cerrar Sesión
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="nav-link" aria-label="Iniciar sesión" onClick={() => setMenuOpen(false)}>Iniciar Sesión</Link>
+                <Link to="/registro" className="nav-link register-btn" aria-label="Registrarse" onClick={() => setMenuOpen(false)}>Registrarse</Link>
+              </>
+            )}
+            <Link to="/carrito" className="nav-link" title="Carrito" aria-label="Ver carrito" onClick={() => setMenuOpen(false)}>
+              <CartIcon />
+              {getTotalItems() > 0 && (
+                <span className="cart-badge">{getTotalItems()}</span>
+              )}
+            </Link>
+          </div>
+        </div>
+        {/* En desktop, nav-menu y nav-auth siguen visibles */}
+        <ul className="nav-menu nav-menu-desktop">
           <li className="nav-item">
             <Link to="/" className="nav-link">Inicio</Link>
           </li>
@@ -47,8 +101,7 @@ function Navbar() {
             <Link to="/ubicacion" className="nav-link">Ubicación</Link>
           </li>
         </ul>
-
-        <div className="nav-auth">
+        <div className="nav-auth nav-auth-desktop">
           <Link to={isAuthenticated ? "/perfil" : "/login"} className="nav-link" title="Mi Perfil">
             <UserIcon />
           </Link>

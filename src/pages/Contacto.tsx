@@ -39,25 +39,108 @@ function Contacto() {
 
   return (
     <div className="contacto-container">
-      <h1>Contacto</h1>
-      <div className="contacto-info">
-        <p><strong>Teléfono:</strong> +57 3208555718</p>
-        <p><strong>Email:</strong> universal.tornillos@gmail.com</p>
-        <p><strong>Dirección:</strong> Cl. 7 #28 09, Los Mártires, Bogotá, Cundinamarca</p>
-        <p><strong>Horario:</strong> Lunes a Viernes, 8:00am - 6:00pm</p>
+      <div className="contacto-header">
+        <h1>Contacto</h1>
+        <p>Estamos aquí para ayudarte. Contáctanos y te responderemos lo antes posible.</p>
       </div>
-      <form className="contacto-form" onSubmit={handleSubmit} autoComplete="off">
-        <h2>Envíanos un mensaje</h2>
-        <input type="text" placeholder="Nombre" name="nombre" required />
-        <input type="email" placeholder="Correo electrónico" name="email" required />
-        <textarea placeholder="Escribe tu mensaje aquí..." name="mensaje" rows={5} required />
-        <button type="submit" disabled={estado === 'enviando'}>
-          {estado === 'enviando' ? 'Enviando...' : 'Enviar'}
-        </button>
-        {estado === 'exito' && <p style={{color:'#1a8a3a',marginTop:8}}>¡Mensaje enviado correctamente!</p>}
-        {estado === 'error' && <p style={{color:'#b00020',marginTop:8}}>{error}</p>}
-      </form>
+
+      <div className="contacto-content">
+        <div className="contacto-info-card">
+          <h2>Información de Contacto</h2>
+          <div className="contacto-info-grid">
+            <div className="contacto-info-item">
+              <div className="contacto-icon">📞</div>
+              <div>
+                <h3>Teléfono</h3>
+                <p>+57 3208555718</p>
+              </div>
+            </div>
+            <div className="contacto-info-item">
+              <div className="contacto-icon">✉️</div>
+              <div>
+                <h3>Email</h3>
+                <p>universal.tornillos@gmail.com</p>
+              </div>
+            </div>
+            <div className="contacto-info-item">
+              <div className="contacto-icon">📍</div>
+              <div>
+                <h3>Dirección</h3>
+                <p>Cl. 7 #28 09, Los Mártires, Bogotá, Cundinamarca</p>
+              </div>
+            </div>
+            <div className="contacto-info-item">
+              <div className="contacto-icon">🕒</div>
+              <div>
+                <h3>Horario</h3>
+                <p>Lunes a Viernes, 8:00am - 6:00pm</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="contacto-form-card">
+          <h2>Envíanos un mensaje</h2>
+          <form className="contacto-form" onSubmit={handleSubmit} autoComplete="off">
+            <div className="form-group">
+              <label htmlFor="nombre">Nombre completo</label>
+              <input 
+                type="text" 
+                id="nombre"
+                placeholder="Tu nombre completo" 
+                name="nombre" 
+                required 
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="email">Correo electrónico</label>
+              <input 
+                type="email" 
+                id="email"
+                placeholder="tu@email.com" 
+                name="email" 
+                required 
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="mensaje">Mensaje</label>
+              <textarea 
+                id="mensaje"
+                placeholder="Escribe tu mensaje aquí..." 
+                name="mensaje" 
+                rows={5} 
+                required 
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              className="contacto-submit-btn"
+              disabled={estado === 'enviando'}
+            >
+              {estado === 'enviando' ? 'Enviando...' : 'Enviar mensaje'}
+            </button>
+            
+            {estado === 'exito' && (
+              <div className="contacto-message success">
+                <span>✓</span>
+                <p>¡Mensaje enviado correctamente! Te responderemos pronto.</p>
+              </div>
+            )}
+            
+            {estado === 'error' && (
+              <div className="contacto-message error">
+                <span>✗</span>
+                <p>{error}</p>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
+
 export default Contacto 

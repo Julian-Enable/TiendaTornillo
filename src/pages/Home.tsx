@@ -1,13 +1,15 @@
 import './Home.css'
+import { useNavigate } from 'react-router-dom'
 
 function Home() {
+  const navigate = useNavigate()
   return (
     <div className="home">
       <section className="hero">
         <div className="hero-content">
           <h1>Bienvenido a Tienda de Tornillos</h1>
           <p>Tu proveedor confiable de tornillos, herramientas y materiales de construcción</p>
-          <button className="cta-button">Ver Productos</button>
+          <button className="cta-button" onClick={() => navigate('/productos')}>Ver Productos</button>
         </div>
       </section>
 

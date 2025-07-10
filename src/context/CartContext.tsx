@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
 
 interface Product {
   id: string
@@ -59,14 +60,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.product.id === product.id)
       if (existingItem) {
-        window.alert('Producto añadido al carrito')
         return prevItems.map(item =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       } else {
-        window.alert('Producto añadido al carrito')
         return [...prevItems, { product, quantity }]
       }
     })
