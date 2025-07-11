@@ -1,7 +1,8 @@
 export interface Product {
   id: string
   name: string
-  price: number
+  priceUnit: number // Precio por unidad
+  priceBulk: number // Precio al por mayor (mínimo 50 unidades)
   category: string
   description: string
   image?: string

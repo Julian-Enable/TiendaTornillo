@@ -4,7 +4,8 @@ export const mockProducts: Product[] = [
   {
     id: '1',
     name: 'Tornillo Allen M6x20',
-    price: 250,
+    priceUnit: 250,
+    priceBulk: 220,
     category: 'Tornillos',
     description: 'Tornillo de acero inoxidable, cabeza Allen, tamaño M6x20mm.',
     image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=80&q=80',
@@ -18,7 +19,8 @@ export const mockProducts: Product[] = [
   {
     id: '2',
     name: 'Tuerca Hexagonal M6',
-    price: 120,
+    priceUnit: 120,
+    priceBulk: 100,
     category: 'Tuercas',
     description: 'Tuerca hexagonal estándar para tornillos M6.',
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=80&q=80',
@@ -31,7 +33,8 @@ export const mockProducts: Product[] = [
   {
     id: '3',
     name: 'Destornillador Phillips',
-    price: 5900,
+    priceUnit: 5900,
+    priceBulk: 5200,
     category: 'Herramientas',
     description: 'Destornillador punta Phillips, mango ergonómico.',
     image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=80&q=80',
@@ -44,7 +47,8 @@ export const mockProducts: Product[] = [
   {
     id: '4',
     name: 'Arandela Plana M6',
-    price: 50,
+    priceUnit: 50,
+    priceBulk: 40,
     category: 'Arandelas',
     description: 'Arandela plana para tornillo M6, acero zincado.',
     stock: 500,
@@ -56,7 +60,8 @@ export const mockProducts: Product[] = [
   {
     id: '5',
     name: 'Juego de Llaves Allen',
-    price: 12000,
+    priceUnit: 12000,
+    priceBulk: 10500,
     category: 'Herramientas',
     description: 'Set de 9 llaves Allen de diferentes tamaños.',
     image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=80&q=80',
@@ -68,7 +73,8 @@ export const mockProducts: Product[] = [
   {
     id: '6',
     name: 'Tornillo Phillips M4x16',
-    price: 180,
+    priceUnit: 180,
+    priceBulk: 150,
     category: 'Tornillos',
     description: 'Tornillo cabeza Phillips, acero niquelado, M4x16mm.',
     image: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=80&q=80',
@@ -82,7 +88,8 @@ export const mockProducts: Product[] = [
   {
     id: '7',
     name: 'Tuerca Mariposa M8',
-    price: 210,
+    priceUnit: 210,
+    priceBulk: 180,
     category: 'Tuercas',
     description: 'Tuerca tipo mariposa para ajustes manuales, M8.',
     image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=80&q=80',
@@ -95,7 +102,8 @@ export const mockProducts: Product[] = [
   {
     id: '8',
     name: 'Arandela Grower M6',
-    price: 70,
+    priceUnit: 70,
+    priceBulk: 60,
     category: 'Arandelas',
     description: 'Arandela de presión tipo grower para tornillo M6.',
     stock: 300,
@@ -107,7 +115,8 @@ export const mockProducts: Product[] = [
   {
     id: '9',
     name: 'Martillo Carpintero',
-    price: 14500,
+    priceUnit: 14500,
+    priceBulk: 13000,
     category: 'Herramientas',
     description: 'Martillo de carpintero con mango de fibra y cabeza de acero.',
     image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=80&q=80',
@@ -120,7 +129,8 @@ export const mockProducts: Product[] = [
   {
     id: '10',
     name: 'Cinta Métrica 5m',
-    price: 6800,
+    priceUnit: 6800,
+    priceBulk: 6000,
     category: 'Accesorios',
     description: 'Cinta métrica retráctil de 5 metros, carcasa plástica.',
     image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=80&q=80',
@@ -133,7 +143,8 @@ export const mockProducts: Product[] = [
   {
     id: '11',
     name: 'Tornillo Rosca Chapa 3.5x25',
-    price: 90,
+    priceUnit: 90,
+    priceBulk: 75,
     category: 'Tornillos',
     description: 'Tornillo para chapa, rosca gruesa, 3.5x25mm.',
     stock: 150,
@@ -145,7 +156,8 @@ export const mockProducts: Product[] = [
   {
     id: '12',
     name: 'Llave Inglesa 8"',
-    price: 11500,
+    priceUnit: 11500,
+    priceBulk: 10000,
     category: 'Herramientas',
     description: 'Llave ajustable de 8 pulgadas, acero forjado.',
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=80&q=80',
@@ -158,7 +170,8 @@ export const mockProducts: Product[] = [
   {
     id: '13',
     name: 'Caja Organizadora',
-    price: 8900,
+    priceUnit: 8900,
+    priceBulk: 7800,
     category: 'Accesorios',
     description: 'Caja plástica con divisiones para tornillos y tuercas.',
     image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=80&q=80',
@@ -170,7 +183,8 @@ export const mockProducts: Product[] = [
   {
     id: '14',
     name: 'Tornillo Allen M8x30',
-    price: 320,
+    priceUnit: 320,
+    priceBulk: 270,
     category: 'Tornillos',
     description: 'Tornillo Allen de alta resistencia, M8x30mm.',
     stock: 90,
@@ -183,7 +197,8 @@ export const mockProducts: Product[] = [
   {
     id: '15',
     name: 'Tuerca Ciega M10',
-    price: 270,
+    priceUnit: 270,
+    priceBulk: 230,
     category: 'Tuercas',
     description: 'Tuerca ciega para acabados estéticos, M10.',
     stock: 70,

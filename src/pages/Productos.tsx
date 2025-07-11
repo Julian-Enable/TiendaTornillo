@@ -271,47 +271,56 @@ function Productos() {
         <>
           <div className="products-grid">
             {filteredProducts.map(product => (
-              <div key={product.id} className="product-card" onClick={() => navigate(`/producto/${product.id}`)} style={{ cursor: 'pointer' }}>
-                <div className="product-image">
+              <div key={product.id} className="product-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: 440, padding: '8px 0 0 0' }}>
+                <div className="product-image" style={{ alignSelf: 'center', marginTop: 0, marginBottom: 0, cursor: 'pointer' }} onClick={() => navigate(`/producto/${product.id}`)}>
                   {product.image ? (
-                    <img src={product.image} alt={product.name} />
+                    <img src={product.image} alt={product.name} style={{ maxWidth: 110, maxHeight: 110, borderRadius: '50%', objectFit: 'cover', margin: '0 auto' }} />
                   ) : (
-                    <div className="placeholder-image">
+                    <div className="placeholder-image" style={{ width: 110, height: 110, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, background: '#ffd700', color: '#1a1a2e', margin: '0 auto' }}>
                       {product.category.charAt(0)}
                     </div>
                   )}
                 </div>
-                <div className="product-info">
-                  <h3>{product.name || 'Producto sin nombre'}</h3>
-                  <p className="product-description">{product.description || 'Sin descripción disponible.'}</p>
+                <div className="product-info" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }}>
+                  <h3
+                    style={{ fontSize: 22, fontWeight: 800, color: '#ffd700', margin: '12px 0 4px 0', lineHeight: 1.1, textAlign: 'center', minHeight: 28, cursor: 'pointer', textDecoration: 'underline dotted' }}
+                    onClick={() => navigate(`/producto/${product.id}`)}
+                  >
+                    {product.name || 'Producto sin nombre'}
+                  </h3>
+                  <p className="product-description" style={{ color: '#e0e0e0', fontSize: 15, marginBottom: 12, textAlign: 'center', maxWidth: 220, minHeight: 20 }}>{product.description || 'Sin descripción disponible.'}</p>
                   {product.specifications && (
-                    <div className="product-specs">
-                      {product.specifications.size && product.specifications.size.trim() !== '' ? (
-                        <span className="spec">Tamaño: {product.specifications.size}</span>
-                      ) : (
-                        <span className="spec">Tamaño: No especificado</span>
-                      )}
-                      {product.specifications.material && product.specifications.material.trim() !== '' ? (
-                        <span className="spec">Material: {product.specifications.material}</span>
-                      ) : (
-                        <span className="spec">Material: No especificado</span>
-                      )}
+                    <div className="product-specs" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, width: '100%', alignItems: 'center' }}>
+                      <span className="spec" style={{ background: 'rgba(35,36,58,0.85)', color: '#ffd700', borderRadius: 8, padding: '6px 18px', fontWeight: 700, fontSize: 15, marginBottom: 2 }}>
+                        {product.specifications.size && product.specifications.size.trim() !== '' ? `Tamaño: ${product.specifications.size}` : 'Tamaño: No especificado'}
+                      </span>
+                      <span className="spec" style={{ background: 'rgba(35,36,58,0.85)', color: '#ffd700', borderRadius: 8, padding: '6px 18px', fontWeight: 700, fontSize: 15 }}>
+                        {product.specifications.material && product.specifications.material.trim() !== '' ? `Material: ${product.specifications.material}` : 'Material: No especificado'}
+                      </span>
                     </div>
                   )}
-                  <div className="product-footer">
-                    <div className="product-price">
-                      <span className="price">${product.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
-                      <span className="stock">Stock: {product.stock}</span>
+                  <div style={{ display: 'flex', gap: 18, margin: '10px 0 8px 0', alignItems: 'flex-end', justifyContent: 'center', width: '100%' }}>
+                    <div style={{ background: 'rgba(35,36,58,0.92)', borderRadius: 12, padding: '10px 18px', minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }}>
+                      <span style={{ fontWeight: 700, color: '#e0e0e0', fontSize: 16, marginBottom: 2 }}>Unidad</span>
+                      <span style={{ fontWeight: 700, color: '#e0e0e0', fontSize: 18 }}>{product.priceUnit.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
                     </div>
-                    <button
-                      className="add-to-cart-btn"
-                      onClick={() => handleAddToCart(product)}
-                      disabled={product.stock === 0}
-                    >
-                      {product.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito'}
-                    </button>
+                    <div style={{ background: 'rgba(35,36,58,0.92)', borderRadius: 12, padding: '10px 18px', minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }}>
+                      <span style={{ fontWeight: 700, color: '#ffd700', fontSize: 16, marginBottom: 2 }}>Mayor (50+)</span>
+                      <span style={{ fontWeight: 700, color: '#ffd700', fontSize: 18 }}>{product.priceBulk.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
+                    </div>
                   </div>
+                  <span className="stock" style={{ color: '#bfc4d1', fontSize: 13, margin: '4px 0 0 0', textAlign: 'center', display: 'block', fontWeight: 400, letterSpacing: 0.2 }}>
+                    <span role="img" aria-label="stock" style={{ marginRight: 4 }}>📦</span>Stock: {product.stock}
+                  </span>
                 </div>
+                <button
+                  className="add-to-cart-btn"
+                  style={{ margin: '18px 0 10px 0', alignSelf: 'center', width: '90%' }}
+                  onClick={() => handleAddToCart(product)}
+                  disabled={product.stock === 0}
+                >
+                  {product.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito'}
+                </button>
               </div>
             ))}
           </div>

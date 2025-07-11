@@ -16,7 +16,8 @@ interface NewProduct extends Omit<Product, 'id'> {
 const initialState: NewProduct = {
   name: '',
   category: categories[1],
-  price: 0,
+  priceUnit: 0,
+  priceBulk: 0,
   stock: 0,
   description: '',
   specifications: {
@@ -56,7 +57,7 @@ export default function AgregarProducto() {
     if (name in product.specifications!) {
       setProduct(p => ({ ...p, specifications: { ...p.specifications, [name]: value } }))
     } else {
-      setProduct(p => ({ ...p, [name]: value }))
+      setProduct(p => ({ ...p, [name]: name === 'priceUnit' || name === 'priceBulk' || name === 'stock' ? Number(value) : value }))
     }
   }
 
@@ -86,7 +87,8 @@ export default function AgregarProducto() {
     const newErrors: {[key: string]: string} = {}
     if (!product.name) newErrors.name = 'El nombre es obligatorio.'
     if (!product.category) newErrors.category = 'La categoría es obligatoria.'
-    if (!product.price || product.price <= 0) newErrors.price = 'El precio debe ser mayor a 0.'
+    if (!product.priceUnit || product.priceUnit <= 0) newErrors.priceUnit = 'El precio por unidad debe ser mayor a 0.'
+    if (!product.priceBulk || product.priceBulk <= 0) newErrors.priceBulk = 'El precio al por mayor debe ser mayor a 0.'
     if (!product.stock || product.stock < 0) newErrors.stock = 'El stock no puede ser negativo.'
     if (!product.description) newErrors.description = 'La descripción es obligatoria.'
     // if (!product.specifications?.size) newErrors.size = 'El tamaño es obligatorio.' // Ya no es obligatorio
@@ -144,8 +146,12 @@ export default function AgregarProducto() {
           </div>
           <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>Precio (COP)</label>
-              <input name="price" type="number" placeholder="Precio del producto" value={product.price} onChange={handleChange} min={0} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
+              <label style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>Precio por unidad (COP)</label>
+              <input name="priceUnit" type="number" placeholder="Precio por unidad" value={product.priceUnit} onChange={handleChange} min={0} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>Precio al por mayor (COP)</label>
+              <input name="priceBulk" type="number" placeholder="Precio al por mayor (mínimo 50)" value={product.priceBulk} onChange={handleChange} min={0} style={{ width: '100%', padding: 12, borderRadius: 8, border: '1.5px solid #1a1a2e', fontSize: 15 }} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>Cantidad en stock</label>
