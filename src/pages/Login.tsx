@@ -2,8 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './Auth.css'
+import { useSeo } from '../hooks/useSeo'
 
 function Login() {
+  useSeo({
+    title: 'Iniciar Sesión | Tienda de Tornillos',
+    description: 'Accede a tu cuenta para comprar, ver tu historial y gestionar tus datos en la Tienda de Tornillos.'
+  })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

@@ -3,8 +3,13 @@ import { useAuth } from '../context/AuthContext'
 import Toast from '../components/Toast'
 import { useState } from 'react'
 import './Carrito.css'
+import { useSeo } from '../hooks/useSeo'
 
 function Carrito() {
+  useSeo({
+    title: 'Carrito de Compras | Tienda de Tornillos',
+    description: 'Revisa y gestiona los productos en tu carrito antes de finalizar tu compra. Compra tornillos, herramientas y más con envío rápido.'
+  })
   const { items, removeFromCart, updateQuantity, getTotalPrice, sendToWhatsApp, clearCart, saveQuotation } = useCart()
   const { isAuthenticated, user } = useAuth()
   const [toast, setToast] = useState<{ show: boolean, message: string }>({ show: false, message: '' })

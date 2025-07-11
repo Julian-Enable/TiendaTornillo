@@ -3,8 +3,13 @@ import { useCart } from '../context/CartContext'
 import Toast from '../components/Toast'
 import { useState } from 'react'
 import './Perfil.css'
+import { useSeo } from '../hooks/useSeo'
 
 function Perfil() {
+  useSeo({
+    title: 'Mi Perfil | Tienda de Tornillos',
+    description: 'Consulta y edita la información de tu cuenta, revisa tu historial de compras y gestiona tus datos personales en nuestra tienda.'
+  })
   const { user, logout } = useAuth()
   const { items, getTotalItems, getQuotations, restoreQuotation, deleteQuotation } = useCart()
   const [toast, setToast] = useState<{ show: boolean, message: string }>({ show: false, message: '' })

@@ -1,7 +1,12 @@
 import './Contacto.css'
 import { useState } from 'react'
+import { useSeo } from '../hooks/useSeo'
 
 function Contacto() {
+  useSeo({
+    title: 'Contacto | Tienda de Tornillos',
+    description: '¿Tienes dudas o necesitas asesoría? Contáctanos y recibe atención personalizada para tus compras de tornillos, herramientas y materiales.'
+  })
   const [estado, setEstado] = useState<'idle' | 'enviando' | 'exito' | 'error'>('idle')
   const [error, setError] = useState('')
 

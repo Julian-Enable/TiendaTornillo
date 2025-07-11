@@ -7,6 +7,7 @@ import Toast from '../components/Toast'
 import './Productos.css'
 import { useNavigate } from 'react-router-dom'
 import { mockProducts } from '../data/mockProducts'
+import { useSeo } from '../hooks/useSeo'
 
 export const products = [
   {
@@ -203,6 +204,10 @@ export const products = [
 ]
 
 function Productos() {
+  useSeo({
+    title: 'Catálogo de Productos | Tienda de Tornillos',
+    description: 'Explora nuestro catálogo de tornillos, tuercas, herramientas y más. Encuentra los productos ideales para tus proyectos y compra online fácil y rápido.'
+  })
   const [selectedCategory, setSelectedCategory] = useState('Todos')
   const [searchTerm, setSearchTerm] = useState('')
   const [toast, setToast] = useState<{ show: boolean, message: string }>({ show: false, message: '' })
@@ -271,30 +276,60 @@ function Productos() {
         <>
           <div className="products-grid">
             {filteredProducts.map(product => (
-              <div key={product.id} className="product-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: 440, padding: '8px 0 0 0' }}>
-                <div className="product-image" style={{ alignSelf: 'center', marginTop: 0, marginBottom: 0, cursor: 'pointer' }} onClick={() => navigate(`/producto/${product.id}`)}>
+              <div key={product.id} className="product-card" 
+                style={{ 
+                  display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: 440, padding: '8px 0 0 0', cursor: 'pointer', transition: 'box-shadow 0.2s',
+                  boxShadow: '0 2px 12px 0 rgba(26,26,46,0.10)',
+                  border: '1.5px solid rgba(255,255,255,0.08)'
+                }}
+                onClick={() => navigate(`/producto/${product.id}`)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Ver detalles de ${product.name}`}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') navigate(`/producto/${product.id}`) }}
+              >
+                <div className="product-image" style={{ alignSelf: 'center', marginTop: 0, marginBottom: 0 }}>
                   {product.image ? (
                     <img src={product.image} alt={product.name} style={{ maxWidth: 110, maxHeight: 110, borderRadius: '50%', objectFit: 'cover', margin: '0 auto' }} />
                   ) : (
-                    <div className="placeholder-image" style={{ width: 110, height: 110, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, background: '#ffd700', color: '#1a1a2e', margin: '0 auto' }}>
+                    <div className="placeholder-image" style={{ width: 110, height: 110, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, background: '#22336b', color: '#ffd700', margin: '0 auto' }}>
                       {product.category.charAt(0)}
                     </div>
                   )}
                 </div>
                 <div className="product-info" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }}>
                   <h3
-                    style={{ fontSize: 22, fontWeight: 800, color: '#ffd700', margin: '12px 0 4px 0', lineHeight: 1.1, textAlign: 'center', minHeight: 28, cursor: 'pointer', textDecoration: 'underline dotted' }}
-                    onClick={() => navigate(`/producto/${product.id}`)}
+                    style={{ fontSize: 22, fontWeight: 800, color: '#f5f7fa', margin: '12px 0 4px 0', lineHeight: 1.1, textAlign: 'center', minHeight: 28 }}
                   >
                     {product.name || 'Producto sin nombre'}
                   </h3>
-                  <p className="product-description" style={{ color: '#e0e0e0', fontSize: 15, marginBottom: 12, textAlign: 'center', maxWidth: 220, minHeight: 20 }}>{product.description || 'Sin descripción disponible.'}</p>
                   {product.specifications && (
                     <div className="product-specs" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, width: '100%', alignItems: 'center' }}>
-                      <span className="spec" style={{ background: 'rgba(35,36,58,0.85)', color: '#ffd700', borderRadius: 8, padding: '6px 18px', fontWeight: 700, fontSize: 15, marginBottom: 2 }}>
+                      <span className="spec" style={{ 
+                        background: 'rgba(255,255,255,0.10)', 
+                        color: '#ffd700', 
+                        borderRadius: 12, 
+                        padding: '7px 20px', 
+                        fontWeight: 700, 
+                        fontSize: 15, 
+                        marginBottom: 2, 
+                        border: '1.5px solid rgba(255,255,255,0.25)', 
+                        backdropFilter: 'blur(8px)', 
+                        boxShadow: '0 2px 8px rgba(26,26,46,0.10)'
+                      }}>
                         {product.specifications.size && product.specifications.size.trim() !== '' ? `Tamaño: ${product.specifications.size}` : 'Tamaño: No especificado'}
                       </span>
-                      <span className="spec" style={{ background: 'rgba(35,36,58,0.85)', color: '#ffd700', borderRadius: 8, padding: '6px 18px', fontWeight: 700, fontSize: 15 }}>
+                      <span className="spec" style={{ 
+                        background: 'rgba(255,255,255,0.10)', 
+                        color: '#f5f7fa', 
+                        borderRadius: 12, 
+                        padding: '7px 20px', 
+                        fontWeight: 700, 
+                        fontSize: 15, 
+                        border: '1.5px solid rgba(255,255,255,0.25)', 
+                        backdropFilter: 'blur(8px)', 
+                        boxShadow: '0 2px 8px rgba(26,26,46,0.10)'
+                      }}>
                         {product.specifications.material && product.specifications.material.trim() !== '' ? `Material: ${product.specifications.material}` : 'Material: No especificado'}
                       </span>
                     </div>
@@ -315,8 +350,8 @@ function Productos() {
                 </div>
                 <button
                   className="add-to-cart-btn"
-                  style={{ margin: '18px 0 10px 0', alignSelf: 'center', width: '90%' }}
-                  onClick={() => handleAddToCart(product)}
+                  style={{ margin: '18px 0 10px 0', alignSelf: 'center', width: '90%', background: '#ffd700', color: '#1a1a2e', fontWeight: 800, fontSize: 17, borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(26,26,46,0.10)', transition: 'background 0.2s' }}
+                  onClick={e => { e.stopPropagation(); handleAddToCart(product); }}
                   disabled={product.stock === 0}
                 >
                   {product.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito'}

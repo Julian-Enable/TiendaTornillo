@@ -1,7 +1,7 @@
 .toast {
   position: fixed;
   right: 2rem;
-  bottom: 2rem;
+  top: 2rem;
   min-width: 220px;
   max-width: 350px;
   background: #1a1a2e;
@@ -13,7 +13,7 @@
   font-size: 1rem;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(40px);
+  transform: translateY(-40px);
   transition: opacity 0.3s, transform 0.3s;
   z-index: 9999;
 }

@@ -2,8 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './Auth.css'
+import { useSeo } from '../hooks/useSeo'
 
 function Registro() {
+  useSeo({
+    title: 'Crear Cuenta | Tienda de Tornillos',
+    description: 'Regístrate gratis para comprar, guardar favoritos y acceder a beneficios exclusivos en la Tienda de Tornillos.'
+  })
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

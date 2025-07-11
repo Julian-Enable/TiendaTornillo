@@ -10,7 +10,6 @@ import Contacto from './pages/Contacto'
 import SobreNosotros from './pages/SobreNosotros'
 import Ubicacion from './pages/Ubicacion'
 import AdminPage from './pages/Admin'
-import AgregarProducto from './pages/AgregarProducto'
 import ProductoDetalle from './pages/ProductoDetalle'
 import NotFound from './pages/NotFound'
 
@@ -30,7 +29,6 @@ function App() {
         <Route path="ubicacion" element={<Ubicacion />} />
         <Route path="*" element={<NotFound />} />
       </Route>
-      <Route path="/agregar-producto" element={<AgregarProducto />} />
       <Route path="/admin" element={<AdminPage />} />
     </Routes>
   )

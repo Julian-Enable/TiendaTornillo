@@ -4,11 +4,16 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import type { Product } from '../data/products'
 import '../pages/Productos.css'
+import { useSeo } from '../hooks/useSeo'
 
 // Importar productos de prueba desde Productos.tsx (temporalmente, hasta que haya backend)
 import { mockProducts } from '../data/mockProducts'
 
 function ProductoDetalle() {
+  useSeo({
+    title: 'Detalle de Producto | Tienda de Tornillos',
+    description: 'Consulta las características, especificaciones y precios de nuestros productos. Compra tornillos, herramientas y más con envío rápido.'
+  })
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToCart } = useCart()

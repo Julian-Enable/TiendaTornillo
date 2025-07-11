@@ -21,7 +21,7 @@ function LogoutIcon() {
 }
 
 function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, isAdmin } = useAuth()
   const { getTotalItems } = useCart()
   const [menuOpen, setMenuOpen] = useState(false)
 

@@ -1,20 +1,24 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import './AdminLogin.css'
+import { useNavigate } from 'react-router-dom'
 
 function AdminLogin() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const { login } = useAuth()
+  const { login, isAdmin } = useAuth()
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Solo permite admin:admin
-    if (username === 'admin' && password === 'admin') {
-      await login('admin@admin.com', 'admin')
+    setError('')
+    // Simulación: solo permite admin@admin.com
+    const ok = await login(username, password)
+    if (ok && isAdmin) {
+      navigate('/admin')
     } else {
-      setError('Usuario o clave incorrectos')
+      setError('Usuario o clave incorrectos o no tienes permisos de administrador')
     }
   }
 
@@ -25,7 +29,7 @@ function AdminLogin() {
         {error && <div className="admin-error">{error}</div>}
         <input
           type="text"
-          placeholder="Usuario"
+          placeholder="Correo de administrador"
           value={username}
           onChange={e => setUsername(e.target.value)}
         />

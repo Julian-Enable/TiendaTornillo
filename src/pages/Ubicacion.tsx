@@ -1,7 +1,12 @@
 import './Ubicacion.css'
 import GoogleReviews from '../components/GoogleReviews'
+import { useSeo } from '../hooks/useSeo'
 
 function Ubicacion() {
+  useSeo({
+    title: 'Ubicación | Tienda de Tornillos',
+    description: 'Encuentra nuestra tienda física, horarios de atención y cómo llegar. ¡Visítanos para recibir asesoría y ver nuestros productos en persona!'
+  })
   const googleMapsUrl = 'https://www.google.com/maps/place/UNIVERSAL+TORNILLOS+Y+FERRETER%C3%8DA+SAS/@4.6064187,-74.0957095,21z/data=!4m6!3m5!1s0x8e3f9914bb6ea08d:0xa36a815bd81441d!8m2!3d4.6064188!4d-74.0955485!16s%2Fg%2F11g01snfc2?hl=es&entry=ttu&g_ep=EgoyMDI1MDYzMC4wIKXMDSoASAFQAw%3D%3D'
   const wazeUrl = 'https://waze.com/ul?ll=4.6064188,-74.0955485&navigate=yes'
   return (
