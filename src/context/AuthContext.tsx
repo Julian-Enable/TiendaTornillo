@@ -1,17 +1,21 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  isAdmin?: boolean
-}
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  type User as FirebaseUser 
+} from 'firebase/auth'
+import { auth } from '../config/firebase'
+import { getUserByEmail, createUser, updateLastLogin } from '../services/userService'
+import type { User } from '../services/userService'
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isAdmin: boolean
+  loading: boolean
   login: (email: string, password: string) => Promise<boolean>
   register: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
@@ -21,56 +25,81 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Escuchar cambios en el estado de autenticación de Firebase
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        try {
+          // Buscar usuario en Firestore
+          const userData = await getUserByEmail(firebaseUser.email!)
+          if (userData) {
+            setUser(userData)
+            // Actualizar último login
+            await updateLastLogin(userData.id)
+          }
+        } catch (error) {
+          console.error('Error al obtener datos del usuario:', error)
+        }
+      } else {
+        setUser(null)
+      }
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulación de login - en producción esto sería una llamada a la API
-    if (email && password) {
-      const isAdmin = email === 'admin@admin.com'
-      const mockUser: User = {
-        id: '1',
-        name: isAdmin ? 'Administrador' : 'Usuario Demo',
-        email: email,
-        isAdmin
-      }
-      setUser(mockUser)
-      localStorage.setItem('user', JSON.stringify(mockUser))
+    try {
+      setLoading(true)
+      await signInWithEmailAndPassword(auth, email, password)
       return true
+    } catch (error) {
+      console.error('Error en login:', error)
+      return false
+    } finally {
+      setLoading(false)
     }
-    return false
   }
 
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    // Simulación de registro - en producción esto sería una llamada a la API
-    if (name && email && password) {
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: name,
-        email: email
+    try {
+      setLoading(true)
+      // Crear usuario en Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      
+      // Crear usuario en Firestore
+      const userData: Omit<User, 'id'> = {
+        name,
+        email,
+        isAdmin: false
       }
-      setUser(newUser)
-      localStorage.setItem('user', JSON.stringify(newUser))
+      
+      await createUser(userData)
       return true
+    } catch (error) {
+      console.error('Error en registro:', error)
+      return false
+    } finally {
+      setLoading(false)
     }
-    return false
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('user')
-  }
-
-  // Verificar si hay usuario guardado al cargar la app
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user')
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+  const logout = async () => {
+    try {
+      await signOut(auth)
+    } catch (error) {
+      console.error('Error en logout:', error)
     }
-  }, [])
+  }
 
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     isAdmin: !!user?.isAdmin,
+    loading,
     login,
     register,
     logout

@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
 import { categories } from '../data/products'
 import type { Product } from '../data/products'
-import { mockProducts } from '../data/mockProducts'
-import type { User } from '../context/AuthContext'
+import { getProducts, createProduct, updateProduct, deleteProduct } from '../services/productService'
+import { getUsers, createUser, updateUser, deleteUser } from '../services/userService'
+import type { User } from '../services/userService'
+import UpdateProducts from '../components/UpdateProducts'
+import TestQuotations from '../components/TestQuotations'
+import TestDeleteQuotations from '../components/TestDeleteQuotations'
+import { resetFirebaseSetup } from '../utils/firebaseReset'
 
 interface Props {
   onLogout: () => void
@@ -61,7 +66,7 @@ function emptyUser(): User {
 }
 
 function AdminPanel({ onLogout, setToast }: Props) {
-  const [products, setProducts] = useState<Product[]>(mockProducts)
+  const [products, setProducts] = useState<Product[]>([])
   const [editing, setEditing] = useState<Product | null>(null)
   const [form, setForm] = useState<Product>(emptyProduct())
   const [showForm, setShowForm] = useState(false)
@@ -69,10 +74,7 @@ function AdminPanel({ onLogout, setToast }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
-  const [users, setUsers] = useState<User[]>([
-    { id: '1', name: 'Administrador', email: 'admin@admin.com', isAdmin: true },
-    { id: '2', name: 'Usuario Demo', email: 'usuario@demo.com', isAdmin: false }
-  ])
+  const [users, setUsers] = useState<User[]>([])
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [userForm, setUserForm] = useState<User>(emptyUser())
   const [showUserForm, setShowUserForm] = useState(false)
@@ -91,16 +93,25 @@ function AdminPanel({ onLogout, setToast }: Props) {
   const [showCategoryForm, setShowCategoryForm] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
-    // getProducts().then(prods => { // This line was removed as per the edit hint
-    //   setProducts(prods)
-    //   setLoading(false)
-    // })
-    // The original code had getProducts, deleteProduct, updateProduct, addProduct imported from productsService.
-    // Since productsService was removed, these functions are no longer available.
-    // For now, we'll just set loading to false as there's no data source.
-    setLoading(false)
-  }, [])
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const [productsData, usersData] = await Promise.all([
+          getProducts(),
+          getUsers()
+        ])
+        setProducts(productsData)
+        setUsers(usersData)
+      } catch (error) {
+        console.error('Error al cargar datos:', error)
+        setToast({ show: true, message: 'Error al cargar datos' })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [setToast])
 
   const handleEdit = (product: Product) => {
     setEditing(product)
@@ -111,8 +122,14 @@ function AdminPanel({ onLogout, setToast }: Props) {
   const handleDelete = async (id: string) => {
     setErrorMsg('')
     setSuccessMsg('')
-    setProducts(products.filter(p => p.id !== id))
-    setToast({ show: true, message: 'Producto eliminado correctamente' })
+    try {
+      await deleteProduct(id)
+      setProducts(products.filter(p => p.id !== id))
+      setToast({ show: true, message: 'Producto eliminado correctamente' })
+    } catch (error) {
+      console.error('Error al eliminar producto:', error)
+      setToast({ show: true, message: 'Error al eliminar producto' })
+    }
   }
 
   const handleAdd = () => {
@@ -146,10 +163,13 @@ function AdminPanel({ onLogout, setToast }: Props) {
     setSubmitting(true)
     try {
       if (editing) {
+        await updateProduct(editing.id, form)
         setProducts(products.map(p => p.id === editing.id ? { ...form, id: editing.id } : p))
         setToast({ show: true, message: 'Producto actualizado correctamente' })
       } else {
-        const newProduct = { ...form, id: (Math.max(0, ...products.map(p => parseInt(p.id))) + 1).toString() }
+        const { id, ...productData } = form
+        const newProductId = await createProduct(productData)
+        const newProduct = { ...form, id: newProductId }
         setProducts([...products, newProduct])
         setToast({ show: true, message: 'Producto agregado correctamente' })
       }
@@ -158,8 +178,7 @@ function AdminPanel({ onLogout, setToast }: Props) {
       setForm(emptyProduct())
     } catch (err) {
       setErrorMsg('Error al guardar el producto')
-      // @ts-ignore
-      console.error('Error al guardar producto:', err?.message || err)
+      console.error('Error al guardar producto:', err)
     } finally {
       setSubmitting(false)
     }
@@ -422,6 +441,68 @@ function AdminPanel({ onLogout, setToast }: Props) {
           </div>
         </div>
       )}
+      
+      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Actualización de Productos</h2>
+      <UpdateProducts />
+      
+      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Prueba de Cotizaciones</h2>
+      <TestQuotations />
+      
+      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Prueba de Eliminación de Cotizaciones</h2>
+      <TestDeleteQuotations />
+      
+      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Configuración de Firebase</h2>
+      <div style={{
+        padding: '2rem',
+        background: 'rgba(35,36,58,0.92)',
+        borderRadius: '12px',
+        margin: '2rem auto',
+        maxWidth: '600px',
+        textAlign: 'center'
+      }}>
+        <h3 style={{ color: '#ffd700', marginBottom: '1rem' }}>
+          Gestión de Configuración
+        </h3>
+        
+        <p style={{ color: '#e0e0e0', marginBottom: '2rem' }}>
+          Si necesitas volver a ejecutar la configuración inicial de Firebase, usa este botón.
+        </p>
+        
+        <button
+          onClick={() => {
+            resetFirebaseSetup()
+            setToast({ show: true, message: 'Configuración reseteada. Recarga la página para volver a configurar.' })
+          }}
+          style={{
+            background: '#ff4444',
+            color: '#fff',
+            border: 'none',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: 'pointer'
+          }}
+        >
+          Resetear Configuración de Firebase
+        </button>
+        
+        <div style={{
+          marginTop: '2rem',
+          textAlign: 'left',
+          background: 'rgba(0,0,0,0.2)',
+          padding: '1rem',
+          borderRadius: '8px'
+        }}>
+          <h4 style={{ color: '#ffd700', marginBottom: '0.5rem' }}>¿Cuándo usar esto?</h4>
+          <ul style={{ color: '#e0e0e0', fontSize: '14px' }}>
+            <li>Si cambias la configuración de Firebase</li>
+            <li>Si necesitas volver a migrar datos iniciales</li>
+            <li>Si hay problemas con la configuración</li>
+            <li>Para desarrollo y pruebas</li>
+          </ul>
+        </div>
+      </div>
     </div>
   )
 }

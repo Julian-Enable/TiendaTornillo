@@ -63,11 +63,14 @@ function Carrito() {
                 </div>
               </div>
               
-              <div className="item-info">
-                <h3>{item.product.name}</h3>
-                <p className="item-description">{item.product.description}</p>
-                <div className="item-price">${item.product.price.toFixed(2)} c/u</div>
-              </div>
+                             <div className="item-info">
+                 <h3>{item.product.name}</h3>
+                 <p className="item-description">{item.product.description}</p>
+                 <div className="item-price">
+                   ${item.quantity >= 50 ? (item.product.priceBulk || 0) : (item.product.priceUnit || 0)} c/u
+                   {item.quantity >= 50 && <span style={{color: '#ffd700', fontSize: '0.9em', marginLeft: '8px'}}>(Mayorista)</span>}
+                 </div>
+               </div>
               
               <div className="item-quantity">
                 <label>Cantidad:</label>
@@ -88,15 +91,17 @@ function Carrito() {
                 </div>
               </div>
               
-              <div className="item-total">
-                <span className="total-price">${(item.product.price * item.quantity).toFixed(2)}</span>
-                <button
-                  className="remove-btn"
-                  onClick={() => removeFromCart(item.product.id)}
-                >
-                  Eliminar
-                </button>
-              </div>
+                             <div className="item-total">
+                 <span className="total-price">
+                   ${((item.quantity >= 50 ? (item.product.priceBulk || 0) : (item.product.priceUnit || 0)) * item.quantity).toFixed(2)}
+                 </span>
+                 <button
+                   className="remove-btn"
+                   onClick={() => removeFromCart(item.product.id)}
+                 >
+                   Eliminar
+                 </button>
+               </div>
             </div>
           ))}
         </div>

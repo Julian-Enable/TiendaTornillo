@@ -1,20 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-
-interface Product {
-  id: string
-  name: string
-  price: number
-  category: string
-  description: string
-  image?: string
-  stock: number
-  specifications?: {
-    size?: string
-    material?: string
-    type?: string
-  }
-}
+import type { Product } from '../data/products'
+import { createQuotation, getQuotationsByUser, deleteQuotation as deleteQuotationFromService } from '../services/orderService'
+import { useAuth } from './AuthContext'
 
 interface CartItem {
   product: Product
@@ -38,15 +26,16 @@ interface CartContextType {
   getTotalItems: () => number
   getTotalPrice: () => number
   sendToWhatsApp: () => void
-  saveQuotation: (userEmail: string, name?: string) => void
-  getQuotations: (userEmail: string) => Quotation[]
-  restoreQuotation: (userEmail: string, id: string) => void
-  deleteQuotation: (userEmail: string, id: string) => void
+  saveQuotation: (name?: string) => Promise<void>
+  getQuotations: () => Promise<Quotation[]>
+  restoreQuotation: (id: string) => Promise<void>
+  deleteQuotation: (id: string) => Promise<void>
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
   const [items, setItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('cart')
     return saved ? JSON.parse(saved) : []
@@ -98,51 +87,120 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const getTotalPrice = () => {
-    return items.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+    return items.reduce((total, item) => {
+      const unitPrice = item.quantity >= 50 ? (item.product.priceBulk || 0) : (item.product.priceUnit || 0)
+      return total + (unitPrice * item.quantity)
+    }, 0)
   }
 
   const sendToWhatsApp = () => {
     if (items.length === 0) return
     const message =
       `Hola! Me gustaría cotizar los siguientes productos:%0A%0A` +
-      items.map(item =>
-        `- ${item.product.name}%0A  Cantidad: ${item.quantity} | Precio: $${(item.product.price * item.quantity).toFixed(2)}%0A`
-      ).join('%0A') +
+      items.map(item => {
+        const unitPrice = item.quantity >= 50 ? (item.product.priceBulk || 0) : (item.product.priceUnit || 0)
+        const total = unitPrice * item.quantity
+        const priceType = item.quantity >= 50 ? ' (Mayorista)' : ' (Unitario)'
+        return `- ${item.product.name}${priceType}%0A  Cantidad: ${item.quantity} | Precio: $${total.toFixed(2)}%0A`
+      }).join('%0A') +
       `%0ATotal: $${getTotalPrice().toFixed(2)}`
     const whatsappUrl = `https://wa.me/573208555718?text=${message}`
     window.open(whatsappUrl, '_blank')
   }
 
-  const saveQuotation = (userEmail: string, name: string = 'Cotización') => {
-    if (!userEmail || items.length === 0) return
-    const quotationsKey = `quotations_${userEmail}`
-    const prev: Quotation[] = JSON.parse(localStorage.getItem(quotationsKey) || '[]')
-    const newQuotation: Quotation = {
-      id: Date.now().toString(),
-      name,
-      date: new Date().toLocaleString(),
-      items,
-      total: getTotalPrice()
+  const saveQuotation = async (name: string = 'Cotización') => {
+    if (!user?.id || items.length === 0) return
+    
+    try {
+      const orderItems = items.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        quantity: item.quantity,
+        priceUnit: item.product.priceUnit,
+        priceBulk: item.product.priceBulk,
+        total: item.quantity >= 50 ? item.product.priceBulk * item.quantity : item.product.priceUnit * item.quantity
+      }))
+
+      await createQuotation({
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        name,
+        items: orderItems,
+        total: getTotalPrice(),
+        status: 'saved'
+      })
+    } catch (error) {
+      console.error('Error al guardar cotización:', error)
+      throw error
     }
-    localStorage.setItem(quotationsKey, JSON.stringify([newQuotation, ...prev]))
   }
 
-  const getQuotations = (userEmail: string): Quotation[] => {
-    if (!userEmail) return []
-    const quotationsKey = `quotations_${userEmail}`
-    return JSON.parse(localStorage.getItem(quotationsKey) || '[]')
+  const getQuotations = async (): Promise<Quotation[]> => {
+    if (!user?.id) return []
+    
+    try {
+      const quotations = await getQuotationsByUser(user.id)
+      return quotations.map(q => ({
+        id: q.id,
+        name: q.name,
+        date: q.createdAt?.toDate?.()?.toLocaleString() || new Date().toLocaleString(),
+        items: q.items.map(item => ({
+          product: {
+            id: item.productId,
+            name: item.productName,
+            priceUnit: item.priceUnit,
+            priceBulk: item.priceBulk,
+            category: '',
+            description: '',
+            stock: 0
+          },
+          quantity: item.quantity
+        })),
+        total: q.total
+      }))
+    } catch (error) {
+      console.error('Error al obtener cotizaciones:', error)
+      return []
+    }
   }
 
-  const restoreQuotation = (userEmail: string, id: string) => {
-    const quotations = getQuotations(userEmail)
-    const quotation = quotations.find(q => q.id === id)
-    if (quotation) setItems(quotation.items)
+  const restoreQuotation = async (id: string) => {
+    if (!user?.id) return
+    
+    try {
+      const quotations = await getQuotationsByUser(user.id)
+      const quotation = quotations.find(q => q.id === id)
+      if (quotation) {
+        // Convertir items de la cotización al formato del carrito
+        const cartItems = quotation.items.map(item => ({
+          product: {
+            id: item.productId,
+            name: item.productName,
+            priceUnit: item.priceUnit,
+            priceBulk: item.priceBulk,
+            category: '',
+            description: '',
+            stock: 0
+          },
+          quantity: item.quantity
+        }))
+        setItems(cartItems)
+      }
+    } catch (error) {
+      console.error('Error al restaurar cotización:', error)
+    }
   }
 
-  const deleteQuotation = (userEmail: string, id: string) => {
-    const quotationsKey = `quotations_${userEmail}`
-    const quotations = getQuotations(userEmail).filter(q => q.id !== id)
-    localStorage.setItem(quotationsKey, JSON.stringify(quotations))
+  const deleteQuotation = async (id: string) => {
+    if (!user?.id) return
+    
+    try {
+      await deleteQuotationFromService(id)
+    } catch (error) {
+      console.error('Error al eliminar cotización:', error)
+      throw error
+    }
   }
 
   const value: CartContextType = {

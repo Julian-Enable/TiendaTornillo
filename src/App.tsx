@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { useState } from 'react'
 import MainLayout from './layouts/MainLayout'
 import Home from './pages/Home'
 import Productos from './pages/Productos.tsx'
@@ -12,8 +13,23 @@ import Ubicacion from './pages/Ubicacion'
 import AdminPage from './pages/Admin'
 import ProductoDetalle from './pages/ProductoDetalle'
 import NotFound from './pages/NotFound'
+import FirebaseSetup from './components/FirebaseSetup'
 
 function App() {
+  const [firebaseReady, setFirebaseReady] = useState(() => {
+    // Verificar si ya se completó la configuración
+    return localStorage.getItem('firebaseSetupComplete') === 'true'
+  })
+
+  const handleFirebaseComplete = () => {
+    setFirebaseReady(true)
+    localStorage.setItem('firebaseSetupComplete', 'true')
+  }
+
+  if (!firebaseReady) {
+    return <FirebaseSetup onComplete={handleFirebaseComplete} />
+  }
+
   return (
     <Routes>
       <Route path="/" element={<MainLayout />}>

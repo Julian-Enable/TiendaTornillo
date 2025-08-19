@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import Toast from '../components/Toast'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './Perfil.css'
 import { useSeo } from '../hooks/useSeo'
 
@@ -13,6 +13,27 @@ function Perfil() {
   const { user, logout } = useAuth()
   const { items, getTotalItems, getQuotations, restoreQuotation, deleteQuotation } = useCart()
   const [toast, setToast] = useState<{ show: boolean, message: string }>({ show: false, message: '' })
+  const [quotations, setQuotations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadQuotations = async () => {
+      if (user?.email) {
+        try {
+          setLoading(true)
+          const quotes = await getQuotations()
+          setQuotations(quotes || [])
+        } catch (error) {
+          console.error('Error al cargar cotizaciones:', error)
+          setQuotations([])
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadQuotations()
+  }, [user?.email, getQuotations])
 
   if (!user) {
     return (
@@ -25,16 +46,28 @@ function Perfil() {
     )
   }
 
-  const quotations = getQuotations(user.email)
-
-  const handleRestore = (id: string) => {
-    restoreQuotation(user.email, id)
-    setToast({ show: true, message: 'Cotización restaurada al carrito' })
+  const handleRestore = async (id: string) => {
+    try {
+      await restoreQuotation(id)
+      setToast({ show: true, message: 'Cotización restaurada al carrito' })
+      // Recargar cotizaciones
+      const quotes = await getQuotations()
+      setQuotations(quotes || [])
+    } catch (error) {
+      setToast({ show: true, message: 'Error al restaurar cotización' })
+    }
   }
 
-  const handleDelete = (id: string) => {
-    deleteQuotation(user.email, id)
-    setToast({ show: true, message: 'Cotización eliminada' })
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteQuotation(id)
+      setToast({ show: true, message: 'Cotización eliminada' })
+      // Recargar cotizaciones
+      const quotes = await getQuotations()
+      setQuotations(quotes || [])
+    } catch (error) {
+      setToast({ show: true, message: 'Error al eliminar cotización' })
+    }
   }
 
   return (
@@ -89,7 +122,11 @@ function Perfil() {
         </div>
         <div className="perfil-section">
           <h2>Mis Cotizaciones Guardadas</h2>
-          {quotations.length === 0 ? (
+          {loading ? (
+            <div className="empty-history">
+              <p>Cargando cotizaciones...</p>
+            </div>
+          ) : quotations.length === 0 ? (
             <div className="empty-history">
               <p>No tienes cotizaciones guardadas.</p>
             </div>

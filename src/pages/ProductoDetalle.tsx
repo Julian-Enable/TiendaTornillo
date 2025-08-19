@@ -1,13 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import type { Product } from '../data/products'
 import '../pages/Productos.css'
 import { useSeo } from '../hooks/useSeo'
 
-// Importar productos de prueba desde Productos.tsx (temporalmente, hasta que haya backend)
-import { mockProducts } from '../data/mockProducts'
+// Importar servicio de productos
+import { getProductById } from '../services/productService'
 
 function ProductoDetalle() {
   useSeo({
@@ -18,10 +18,39 @@ function ProductoDetalle() {
   const navigate = useNavigate()
   const { addToCart } = useCart()
   const { isAuthenticated } = useAuth()
-  // Buscar producto por id
-  const product: Product | undefined = mockProducts.find(p => p.id === id)
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
   const [cantidad, setCantidad] = useState(1)
   const [mensaje, setMensaje] = useState('')
+
+  // Cargar producto desde Firestore
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!id) return
+      try {
+        setLoading(true)
+        const productData = await getProductById(id)
+        setProduct(productData)
+      } catch (error) {
+        console.error('Error al cargar producto:', error)
+        setProduct(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProduct()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="productos-container">
+        <div className="no-products">
+          <h2>Cargando producto...</h2>
+        </div>
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -64,11 +93,11 @@ function ProductoDetalle() {
         <div style={{display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '1.2rem', justifyContent: 'center'}}>
           <div style={{ background: 'rgba(35,36,58,0.92)', borderRadius: 12, padding: '10px 18px', minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }}>
             <span style={{ fontWeight: 700, color: '#e0e0e0', fontSize: 16, marginBottom: 2 }}>Unidad</span>
-            <span style={{ fontWeight: 700, color: '#e0e0e0', fontSize: 18 }}>{product.priceUnit.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
+                         <span style={{ fontWeight: 700, color: '#e0e0e0', fontSize: 18 }}>{(product.priceUnit || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
           </div>
           <div style={{ background: 'rgba(35,36,58,0.92)', borderRadius: 12, padding: '10px 18px', minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }}>
             <span style={{ fontWeight: 700, color: '#ffd700', fontSize: 16, marginBottom: 2 }}>Mayor (50+)</span>
-            <span style={{ fontWeight: 700, color: '#ffd700', fontSize: 18 }}>{product.priceBulk.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
+                         <span style={{ fontWeight: 700, color: '#ffd700', fontSize: 18 }}>{(product.priceBulk || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
           </div>
           <span className="stock" style={{ color: '#bfc4d1', fontSize: 13, margin: '4px 0 0 0', textAlign: 'center', display: 'block', fontWeight: 400, letterSpacing: 0.2 }}>
             <span role="img" aria-label="stock" style={{ marginRight: 4 }}>📦</span>Stock: {product.stock}

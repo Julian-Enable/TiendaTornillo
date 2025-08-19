@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import Toast from '../components/Toast'
 import './Productos.css'
 import { useNavigate } from 'react-router-dom'
-import { mockProducts } from '../data/mockProducts'
+import { getProducts } from '../services/productService'
 import { useSeo } from '../hooks/useSeo'
 
 export const products = [
@@ -214,11 +214,24 @@ function Productos() {
   const { addToCart } = useCart()
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [productsState, setProducts] = useState<Product[]>(mockProducts)
+  const [productsState, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setLoading(false)
+    const loadProducts = async () => {
+      try {
+        setLoading(true)
+        const products = await getProducts()
+        setProducts(products)
+      } catch (error) {
+        console.error('Error al cargar productos:', error)
+        setToast({ show: true, message: 'Error al cargar productos' })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProducts()
   }, [])
 
   const filteredProducts = useMemo(() => {
