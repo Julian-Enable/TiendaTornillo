@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permitir acceso a imágenes de productos
+    match /product-images/{fileName} {
+      // Permitir lectura a todos (para mostrar imágenes en la web)
+      allow read: if true;
+      
+      // Permitir escritura solo a usuarios autenticados
+      allow write: if request.auth != null;
+    }
+    
+    // Regla por defecto - denegar todo lo demás
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

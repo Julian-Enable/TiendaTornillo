@@ -77,17 +77,22 @@ export const getUserById = async (id: string): Promise<User | null> => {
 // Obtener usuario por email
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   try {
+    console.log('🔍 Buscando usuario con email:', email)
     const q = query(collection(db, USERS_COLLECTION), where('email', '==', email))
     const querySnapshot = await getDocs(q)
     
     if (!querySnapshot.empty) {
       const doc = querySnapshot.docs[0]
-      return { id: doc.id, ...doc.data() } as User
+      const userData = { id: doc.id, ...doc.data() } as User
+      console.log('✅ Usuario encontrado:', userData)
+      return userData
     } else {
+      console.log('❌ Usuario no encontrado en Firestore')
       return null
     }
   } catch (error) {
-    console.error('Error al obtener usuario por email:', error)
+    console.error('❌ Error al obtener usuario por email:', error)
+    console.error('❌ Error details:', error)
     throw error
   }
 }

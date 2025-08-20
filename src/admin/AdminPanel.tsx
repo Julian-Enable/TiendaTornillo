@@ -2,17 +2,20 @@ import { useState, useEffect } from 'react'
 import { categories } from '../data/products'
 import type { Product } from '../data/products'
 import { getProducts, createProduct, updateProduct, deleteProduct, toggleFeaturedProduct } from '../services/productService'
-import { getUsers, createUser, updateUser, deleteUser } from '../services/userService'
+import { getUsers } from '../services/userService'
+import { uploadImage, deleteImage, validateImageFile } from '../services/imageService'
 import type { User } from '../services/userService'
 import UpdateProducts from '../components/UpdateProducts'
 import TestQuotations from '../components/TestQuotations'
 import TestDeleteQuotations from '../components/TestDeleteQuotations'
 import AddRandomImages from '../components/AddRandomImages'
+import ImageUploadProgress from '../components/ImageUploadProgress'
 import { resetFirebaseSetup } from '../utils/firebaseReset'
 
 interface Props {
   onLogout: () => void
   setToast: (toast: { show: boolean, message: string }) => void
+  onGoHome?: () => void
 }
 
 type Pedido = {
@@ -49,7 +52,8 @@ function emptyProduct(): Product {
   return {
     id: '',
     name: '',
-    price: 0,
+    priceUnit: 0,
+    priceBulk: 0,
     category: categories[1],
     description: '',
     stock: 0,
@@ -66,7 +70,7 @@ function emptyUser(): User {
   }
 }
 
-function AdminPanel({ onLogout, setToast }: Props) {
+function AdminPanel({ onLogout, setToast, onGoHome }: Props) {
   const [products, setProducts] = useState<Product[]>([])
   const [editing, setEditing] = useState<Product | null>(null)
   const [form, setForm] = useState<Product>(emptyProduct())
@@ -82,6 +86,8 @@ function AdminPanel({ onLogout, setToast }: Props) {
   const [pedidos] = useState<Pedido[]>(mockPedidos)
   const [detallePedido, setDetallePedido] = useState<Pedido | null>(null)
   const [imagePreview, setImagePreview] = useState<string | undefined>(undefined)
+  const [isImageUploading, setIsImageUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<number>(0)
   const [categoriesState, setCategoriesState] = useState<string[]>([
     'Tornillos',
     'Tuercas',
@@ -124,7 +130,22 @@ function AdminPanel({ onLogout, setToast }: Props) {
     setErrorMsg('')
     setSuccessMsg('')
     try {
+      // Buscar el producto para obtener su imagen
+      const productToDelete = products.find(p => p.id === id)
+      
+      // Eliminar el producto de la base de datos
       await deleteProduct(id)
+      
+      // Si el producto tenía una imagen, eliminarla de Firebase Storage
+      if (productToDelete?.image) {
+        try {
+          await deleteImage(productToDelete.image)
+          console.log('✅ Imagen del producto eliminada')
+        } catch (error) {
+          console.warn('⚠️ No se pudo eliminar la imagen del producto:', error)
+        }
+      }
+      
       setProducts(products.filter(p => p.id !== id))
       setToast({ show: true, message: 'Producto eliminado correctamente' })
     } catch (error) {
@@ -162,12 +183,73 @@ function AdminPanel({ onLogout, setToast }: Props) {
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    console.log('🖼️ Iniciando proceso de subida de imagen...')
+    console.log('📁 Archivo seleccionado:', file)
+    
     if (file) {
-      const url = URL.createObjectURL(file)
-      setImagePreview(url)
-      setForm({ ...form, image: url })
+      try {
+        console.log('🔍 Validando archivo...')
+        console.log('   - Nombre:', file.name)
+        console.log('   - Tamaño:', file.size, 'bytes')
+        console.log('   - Tipo:', file.type)
+        
+        // Validar el archivo
+        validateImageFile(file)
+        console.log('✅ Archivo validado correctamente')
+        
+        // Mostrar preview temporal
+        const tempUrl = URL.createObjectURL(file)
+        setImagePreview(tempUrl)
+        console.log('🖼️ Preview temporal creado:', tempUrl)
+        
+        // Mostrar progreso de carga solo para archivos grandes
+        const isLargeFile = file.size > 1024 * 1024 // Más de 1MB
+        if (isLargeFile) {
+          setIsImageUploading(true)
+          setUploadProgress(0)
+          console.log('⏳ Archivo grande detectado, mostrando progreso...')
+        }
+        
+        // Si estamos editando un producto existente, usar su ID
+        // Si es un producto nuevo, generar un ID temporal
+        const productId = editing?.id || `temp_${Date.now()}`
+        console.log('🆔 ID del producto para la imagen:', productId)
+        
+        // Subir imagen a Firebase Storage
+        console.log('☁️ Iniciando subida a Firebase Storage...')
+        const imageUrl = await uploadImage(file, productId)
+        console.log('✅ Imagen subida exitosamente:', imageUrl)
+        
+        // Ocultar progreso rápidamente
+        if (isLargeFile) {
+          setUploadProgress(100)
+          setTimeout(() => {
+            setIsImageUploading(false)
+            setUploadProgress(0)
+          }, 300)
+        }
+        
+        // Actualizar el formulario con la URL permanente
+        setForm({ ...form, image: imageUrl })
+        setImagePreview(imageUrl)
+        
+        console.log('✅ Imagen procesada y guardada:', imageUrl)
+        setToast({ show: true, message: 'Imagen subida exitosamente' })
+      } catch (error) {
+        console.error('❌ Error al procesar imagen:', error)
+        console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No disponible')
+        setToast({ show: true, message: `Error al procesar imagen: ${error instanceof Error ? error.message : 'Error desconocido'}` })
+        
+        // Limpiar estado en caso de error
+        setIsImageUploading(false)
+        setUploadProgress(0)
+        setImagePreview(undefined)
+        setForm({ ...form, image: undefined })
+      }
+    } else {
+      console.log('⚠️ No se seleccionó ningún archivo')
     }
   }
 
@@ -178,6 +260,16 @@ function AdminPanel({ onLogout, setToast }: Props) {
     setSubmitting(true)
     try {
       if (editing) {
+        // Si estamos editando y hay una imagen nueva, eliminar la imagen anterior
+        if (form.image && form.image !== editing.image && editing.image) {
+          try {
+            await deleteImage(editing.image)
+            console.log('✅ Imagen anterior eliminada')
+          } catch (error) {
+            console.warn('⚠️ No se pudo eliminar la imagen anterior:', error)
+          }
+        }
+        
         await updateProduct(editing.id, form)
         setProducts(products.map(p => p.id === editing.id ? { ...form, id: editing.id } : p))
         setToast({ show: true, message: 'Producto actualizado correctamente' })
@@ -191,6 +283,7 @@ function AdminPanel({ onLogout, setToast }: Props) {
       setShowForm(false)
       setEditing(null)
       setForm(emptyProduct())
+      setImagePreview(undefined)
     } catch (err) {
       setErrorMsg('Error al guardar el producto')
       console.error('Error al guardar producto:', err)
@@ -261,18 +354,175 @@ function AdminPanel({ onLogout, setToast }: Props) {
     setCategoryInput('')
   }
 
+  const handleGoHome = () => {
+    if (onGoHome) {
+      onGoHome()
+    } else {
+      window.location.href = '/'
+    }
+  }
+
+  const handleDebugImages = () => {
+    console.log('🔍 DEBUG: Analizando productos y sus imágenes...')
+    console.log('📊 Total de productos:', products.length)
+    
+    products.forEach((product, index) => {
+      console.log(`\n${index + 1}. ${product.name}:`)
+      console.log(`   - ID: ${product.id}`)
+      console.log(`   - Imagen: ${product.image || 'NO TIENE'}`)
+      console.log(`   - Tipo de imagen: ${typeof product.image}`)
+      if (product.image) {
+        console.log(`   - Longitud: ${product.image.length}`)
+        console.log(`   - Es URL válida: ${product.image.startsWith('http')}`)
+        console.log(`   - Es Firebase Storage: ${product.image.includes('firebase')}`)
+        console.log(`   - Es Unsplash: ${product.image.includes('unsplash')}`)
+      }
+      console.log('---')
+    })
+    
+    // También verificar el estado actual del formulario
+    console.log('\n📝 ESTADO DEL FORMULARIO:')
+    console.log('   - Editando:', editing ? 'SÍ' : 'NO')
+    console.log('   - Formulario visible:', showForm ? 'SÍ' : 'NO')
+    console.log('   - Imagen en formulario:', form.image || 'NO TIENE')
+    console.log('   - Preview de imagen:', imagePreview || 'NO TIENE')
+    
+    setToast({ show: true, message: 'Revisa la consola del navegador para ver el análisis completo' })
+  }
+
+  const handleTestFirebaseStorage = async () => {
+    try {
+      console.log('🧪 Probando conexión con Firebase Storage...')
+      
+      // Crear un archivo de prueba
+      const testContent = 'Test file content'
+      const testBlob = new Blob([testContent], { type: 'text/plain' })
+      const testFile = new File([testBlob], 'test.txt', { type: 'text/plain' })
+      
+      console.log('📁 Archivo de prueba creado:', testFile.name, '(', testFile.size, 'bytes)')
+      
+      // Intentar subir el archivo de prueba
+      const testUrl = await uploadImage(testFile, 'test-connection')
+      console.log('✅ Conexión exitosa! URL de prueba:', testUrl)
+      
+      setToast({ show: true, message: '✅ Conexión con Firebase Storage exitosa' })
+    } catch (error) {
+      console.error('❌ Error en la conexión con Firebase Storage:', error)
+      setToast({ show: true, message: `❌ Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}` })
+    }
+  }
+
+  const handleShowStorageInstructions = () => {
+    const instructions = `
+🔧 CONFIGURACIÓN DE FIREBASE STORAGE
+
+1. Ve a: https://console.firebase.google.com/
+2. Selecciona tu proyecto: tienda-tornillo
+3. En el menú lateral, ve a STORAGE
+4. Si no está inicializado, haz clic en "Get started"
+5. Selecciona "Start in test mode"
+6. Ve a la pestaña RULES
+7. Reemplaza todo con las reglas del archivo firestore-storage.rules
+8. Haz clic en PUBLISH
+
+Las reglas permiten:
+- ✅ Lectura pública de imágenes
+- ✅ Escritura solo para usuarios autenticados
+- ✅ Seguridad para todo lo demás
+    `
+    console.log(instructions)
+    setToast({ show: true, message: '📋 Instrucciones mostradas en consola. Revisa la consola del navegador.' })
+  }
+
   return (
-    <div style={{ position: 'relative', padding: '2rem', maxWidth: 900, margin: '0 auto', background: 'rgba(20,22,40,0.75)', borderRadius: 24, boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18)', backdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.10)' }}>
-      <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', zIndex: 10 }}>
-        {/* Eliminar: <Toast message={toast.message} show={toast.show} onClose={() => setToast({ ...toast, show: false })} /> */}
+    <div style={{ position: 'relative', padding: '2rem', maxWidth: 1200, margin: '0 auto', background: 'rgba(20,22,40,0.75)', borderRadius: 24, boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18)', backdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.10)' }}>
+      {/* Header con navegación */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '2rem',
+        paddingBottom: '1rem',
+        borderBottom: '2px solid rgba(255,215,0,0.3)'
+      }}>
+        <h1 style={{ 
+          color: '#ffd700', 
+          fontWeight: 900, 
+          margin: 0, 
+          textAlign: 'left', 
+          letterSpacing: 1,
+          fontSize: '2rem'
+        }}>
+          🛠️ Panel de Administración
+        </h1>
+        
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            onClick={handleGoHome}
+            style={{ 
+              background: 'linear-gradient(135deg, #3498db, #2980b9)', 
+              color: '#fff', 
+              fontWeight: 'bold', 
+              border: 'none', 
+              borderRadius: 8, 
+              padding: '0.6rem 1.2rem', 
+              cursor: 'pointer', 
+              boxShadow: '0 2px 8px rgba(52,152,219,0.3)',
+              transition: 'all 0.3s ease',
+              fontSize: '14px'
+            }}
+          >
+            🏠 Ir al Inicio
+          </button>
+          
+          <button 
+            onClick={onLogout} 
+            style={{ 
+              background: 'linear-gradient(135deg, #e74c3c, #c0392b)', 
+              color: '#fff', 
+              fontWeight: 'bold', 
+              border: 'none', 
+              borderRadius: 8, 
+              padding: '0.6rem 1.2rem', 
+              cursor: 'pointer', 
+              boxShadow: '0 2px 8px rgba(231,76,60,0.3)',
+              transition: 'all 0.3s ease',
+              fontSize: '14px'
+            }}
+          >
+            🚪 Cerrar Sesión
+          </button>
+        </div>
       </div>
-      <h1 style={{ color: '#ffd700', fontWeight: 900, marginBottom: 24, textAlign: 'center', letterSpacing: 1 }}>Panel de Administración</h1>
-      <button onClick={onLogout} style={{ float: 'right', marginBottom: 20, background: '#ffd700', color: '#1a1a2e', fontWeight: 'bold', border: 'none', borderRadius: 8, padding: '0.5rem 1.5rem', cursor: 'pointer', boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }}>
-        Cerrar sesión admin
-      </button>
-      {/* Gestión de categorías */}
-      <h2 style={{ marginTop: 24, color: '#ffd700', fontWeight: 800 }}>Gestión de Categorías</h2>
-      <button onClick={handleAddCategory} style={{ marginBottom: 18, background: '#1a1a2e', color: '#ffd700', fontWeight: 'bold', border: 'none', borderRadius: 10, padding: '0.5rem 1.5rem', cursor: 'pointer', fontSize: 16 }}>Agregar Categoría</button>
+      {/* Sección de Categorías */}
+      <section style={{ 
+        background: 'rgba(255,255,255,0.02)', 
+        borderRadius: '16px', 
+        padding: '2rem', 
+        marginBottom: '3rem',
+        border: '1px solid rgba(255,215,0,0.2)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ margin: 0, color: '#ffd700', fontWeight: 800, fontSize: '1.5rem' }}>
+            📁 Gestión de Categorías
+          </h2>
+          <button 
+            onClick={handleAddCategory} 
+            style={{ 
+              background: 'linear-gradient(135deg, #ffd700, #ffed4e)', 
+              color: '#1a1a2e', 
+              fontWeight: 'bold', 
+              border: 'none', 
+              borderRadius: 10, 
+              padding: '0.7rem 1.5rem', 
+              cursor: 'pointer', 
+              fontSize: 16,
+              boxShadow: '0 2px 8px rgba(255,215,0,0.3)'
+            }}
+          >
+            ➕ Agregar Categoría
+          </button>
+        </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'rgba(34,36,58,0.55)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px 0 rgba(26,26,46,0.10)' }}>
         <thead>
           <tr style={{ background: 'rgba(255,255,255,0.13)' }}>
@@ -304,59 +554,331 @@ function AdminPanel({ onLogout, setToast }: Props) {
           </form>
         </div>
       )}
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Gestión de Productos</h2>
-      <button onClick={handleAdd} style={{ marginBottom: 20, background: '#1a1a2e', color: '#ffd700', fontWeight: 'bold', border: 'none', borderRadius: 8, padding: '0.5rem 1.5rem', cursor: 'pointer' }}>
-        Agregar Producto
-      </button>
-      <div style={{ color: 'green', marginBottom: 10 }}>{successMsg}</div>
-      <div style={{ color: 'red', marginBottom: 10 }}>{errorMsg}</div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20, background: 'rgba(34,36,58,0.55)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px 0 rgba(26,26,46,0.10)' }}>
-        <thead>
-          <tr style={{ background: 'rgba(255,255,255,0.13)' }}>
-            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17, padding: '10px 0', letterSpacing: 0.5 }}>Nombre</th>
-            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Categoría</th>
-            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Precio Unidad</th>
-            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Precio Mayorista</th>
-            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Stock</th>
-            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Destacado</th>
-            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map(p => (
-            <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.07)' }}>
-              <td style={{ color: '#f5f7fa', fontWeight: 600, padding: '8px 0 8px 24px', textShadow: '0 1px 2px #2228' }}>{p.name}</td>
-              <td style={{ color: '#e0e6f7', fontWeight: 500 }}>{p.category}</td>
-              <td style={{ color: '#ffd700', fontWeight: 700 }}>${p.priceUnit.toLocaleString('es-CO')}</td>
-              <td style={{ color: '#ffd700', fontWeight: 700 }}>${p.priceBulk.toLocaleString('es-CO')}</td>
-              <td style={{ color: '#bfc4d1', fontWeight: 500 }}>{p.stock}</td>
-              <td style={{ textAlign: 'center' }}>
-                <button
-                  onClick={() => handleToggleFeatured(p.id, !p.destacado)}
-                  style={{
-                    background: p.destacado ? '#ffd700' : 'rgba(255,255,255,0.1)',
-                    color: p.destacado ? '#1a1a2e' : '#ffd700',
-                    border: '2px solid #ffd700',
-                    borderRadius: 20,
-                    padding: '4px 12px',
-                    cursor: 'pointer',
-                    fontWeight: 700,
-                    fontSize: 12,
-                    transition: 'all 0.3s ease'
-                  }}
-                  title={p.destacado ? 'Quitar de destacados' : 'Marcar como destacado'}
-                >
-                  {p.destacado ? '⭐ Destacado' : '☆ Normal'}
-                </button>
-              </td>
-              <td>
-                <button onClick={() => handleEdit(p)} style={{ marginRight: 8, background: '#1a1a2e', color: '#ffd700', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontWeight: 700 }}>Editar</button>
-                <button onClick={() => handleDelete(p.id)} style={{ background: '#ff4444', color: 'white', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontWeight: 700 }}>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      </section>
+
+      {/* Sección de Productos */}
+      <section style={{ 
+        background: 'rgba(255,255,255,0.02)', 
+        borderRadius: '16px', 
+        padding: '2rem', 
+        marginBottom: '3rem',
+        border: '1px solid rgba(255,215,0,0.2)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ margin: 0, color: '#ffd700', fontWeight: 800, fontSize: '1.5rem' }}>
+            📦 Gestión de Productos
+          </h2>
+                     <div style={{ display: 'flex', gap: '12px' }}>
+             <button 
+               onClick={handleAdd} 
+               style={{ 
+                 background: 'linear-gradient(135deg, #ffd700, #ffed4e)', 
+                 color: '#1a1a2e', 
+                 fontWeight: 'bold', 
+                 border: 'none', 
+                 borderRadius: 8, 
+                 padding: '0.7rem 1.5rem', 
+                 cursor: 'pointer',
+                 boxShadow: '0 2px 8px rgba(255,215,0,0.3)'
+               }}
+             >
+               ➕ Agregar Producto
+             </button>
+             
+             <button 
+               onClick={handleDebugImages} 
+               style={{ 
+                 background: 'linear-gradient(135deg, #9b59b6, #8e44ad)', 
+                 color: '#fff', 
+                 fontWeight: 'bold', 
+                 border: 'none', 
+                 borderRadius: 8, 
+                 padding: '0.7rem 1.5rem', 
+                 cursor: 'pointer',
+                 boxShadow: '0 2px 8px rgba(155,89,182,0.3)',
+                 fontSize: '14px'
+               }}
+             >
+               🔍 Debug Imágenes
+             </button>
+             
+             <button 
+               onClick={handleTestFirebaseStorage} 
+               style={{ 
+                 background: 'linear-gradient(135deg, #27ae60, #2ecc71)', 
+                 color: '#fff', 
+                 fontWeight: 'bold', 
+                 border: 'none', 
+                 borderRadius: 8, 
+                 padding: '0.7rem 1.5rem', 
+                 cursor: 'pointer',
+                 boxShadow: '0 2px 8px rgba(39,174,96,0.3)',
+                 fontSize: '14px'
+               }}
+             >
+               🧪 Probar Storage
+             </button>
+             
+             <button 
+               onClick={handleShowStorageInstructions} 
+               style={{ 
+                 background: 'linear-gradient(135deg, #f39c12, #e67e22)', 
+                 color: '#fff', 
+                 fontWeight: 'bold', 
+                 border: 'none', 
+                 borderRadius: 8, 
+                 padding: '0.7rem 1.5rem', 
+                 cursor: 'pointer',
+                 boxShadow: '0 2px 8px rgba(243,156,18,0.3)',
+                 fontSize: '14px'
+               }}
+             >
+               📋 Instrucciones Storage
+             </button>
+           </div>
+        </div>
+        
+        {/* Mensajes de estado */}
+        {successMsg && (
+          <div style={{ 
+            background: 'rgba(46,204,113,0.2)', 
+            border: '1px solid rgba(46,204,113,0.5)', 
+            borderRadius: '8px', 
+            padding: '12px', 
+            color: '#2ecc71', 
+            marginBottom: '1rem' 
+          }}>
+            ✅ {successMsg}
+          </div>
+        )}
+        {errorMsg && (
+          <div style={{ 
+            background: 'rgba(231,76,60,0.2)', 
+            border: '1px solid rgba(231,76,60,0.5)', 
+            borderRadius: '8px', 
+            padding: '12px', 
+            color: '#e74c3c', 
+            marginBottom: '1rem' 
+          }}>
+            ❌ {errorMsg}
+          </div>
+        )}
+
+        {/* Tabla de productos mejorada */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse', 
+            background: 'rgba(34,36,58,0.55)', 
+            borderRadius: 14, 
+            overflow: 'hidden', 
+            boxShadow: '0 2px 12px 0 rgba(26,26,46,0.10)',
+                         minWidth: '1000px'
+          }}>
+                         <thead>
+               <tr style={{ background: 'rgba(255,255,255,0.13)' }}>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', letterSpacing: 0.5, textAlign: 'center' }}>🖼️ Imagen</th>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', letterSpacing: 0.5, textAlign: 'left' }}>Producto</th>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', textAlign: 'center' }}>Categoría</th>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', textAlign: 'center' }}>💰 Unitario</th>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', textAlign: 'center' }}>📦 Mayorista</th>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', textAlign: 'center' }}>📊 Stock</th>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', textAlign: 'center' }}>⭐ Destacado</th>
+                 <th style={{ color: '#fff', fontWeight: 800, fontSize: 15, padding: '16px 12px', textAlign: 'center' }}>🔧 Acciones</th>
+               </tr>
+             </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                                     <td colSpan={8} style={{ 
+                     textAlign: 'center', 
+                     padding: '2rem', 
+                     color: '#ffd700', 
+                     fontSize: '1.2rem' 
+                   }}>
+                     ⏳ Cargando productos...
+                   </td>
+                 </tr>
+               ) : products.length === 0 ? (
+                 <tr>
+                   <td colSpan={8} style={{ 
+                     textAlign: 'center', 
+                     padding: '2rem', 
+                     color: '#bfc4d1', 
+                     fontSize: '1.1rem' 
+                   }}>
+                     📭 No hay productos registrados
+                   </td>
+                </tr>
+                             ) : (
+                 products.map(p => (
+                   <tr key={p.id} style={{ 
+                     borderBottom: '1px solid rgba(255,255,255,0.08)', 
+                     background: 'rgba(255,255,255,0.07)',
+                     transition: 'background 0.3s ease'
+                   }}>
+                     <td style={{ 
+                       padding: '16px 12px', 
+                       textAlign: 'center',
+                       verticalAlign: 'middle'
+                     }}>
+                       {p.image ? (
+                         <img 
+                           src={p.image} 
+                           alt={p.name}
+                           style={{ 
+                             width: '50px', 
+                             height: '50px', 
+                             objectFit: 'cover',
+                             borderRadius: '8px',
+                             border: '2px solid #ffd700',
+                             boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                           }}
+                           onError={(e) => {
+                             const target = e.currentTarget as HTMLImageElement
+                             target.style.display = 'none'
+                             const nextSibling = target.nextSibling as HTMLElement
+                             if (nextSibling) {
+                               nextSibling.style.display = 'flex'
+                             }
+                           }}
+                         />
+                       ) : null}
+                                                <div style={{ 
+                           display: p.image ? 'none' : 'flex',
+                           width: '50px', 
+                           height: '50px', 
+                           background: 'rgba(255,215,0,0.2)',
+                           borderRadius: '8px',
+                           border: '2px dashed #ffd700',
+                           alignItems: 'center',
+                           justifyContent: 'center',
+                           fontSize: '20px'
+                         }}>
+                           🖼️
+                         </div>
+                     </td>
+                     <td style={{ 
+                       color: '#f5f7fa', 
+                       fontWeight: 600, 
+                       padding: '16px 12px', 
+                       textShadow: '0 1px 2px #2228',
+                       maxWidth: '200px'
+                     }}>
+                       {p.name}
+                     </td>
+                    <td style={{ 
+                      color: '#e0e6f7', 
+                      fontWeight: 500, 
+                      padding: '16px 12px', 
+                      textAlign: 'center' 
+                    }}>
+                      <span style={{
+                        background: 'rgba(255,215,0,0.2)',
+                        color: '#ffd700',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}>
+                        {p.category}
+                      </span>
+                    </td>
+                    <td style={{ 
+                      color: '#ffd700', 
+                      fontWeight: 700, 
+                      padding: '16px 12px', 
+                      textAlign: 'center' 
+                    }}>
+                      ${p.priceUnit?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td style={{ 
+                      color: '#ffd700', 
+                      fontWeight: 700, 
+                      padding: '16px 12px', 
+                      textAlign: 'center' 
+                    }}>
+                      ${p.priceBulk?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td style={{ 
+                      color: '#bfc4d1', 
+                      fontWeight: 500, 
+                      padding: '16px 12px', 
+                      textAlign: 'center' 
+                    }}>
+                      <span style={{
+                        background: p.stock > 50 ? 'rgba(46,204,113,0.2)' : p.stock > 20 ? 'rgba(243,156,18,0.2)' : 'rgba(231,76,60,0.2)',
+                        color: p.stock > 50 ? '#2ecc71' : p.stock > 20 ? '#f39c12' : '#e74c3c',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 700
+                      }}>
+                        {p.stock}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '16px 12px' }}>
+                      <button
+                        onClick={() => handleToggleFeatured(p.id, !p.destacado)}
+                        style={{
+                          background: p.destacado ? 'linear-gradient(135deg, #ffd700, #ffed4e)' : 'rgba(255,255,255,0.1)',
+                          color: p.destacado ? '#1a1a2e' : '#ffd700',
+                          border: '2px solid #ffd700',
+                          borderRadius: 20,
+                          padding: '6px 12px',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: 11,
+                          transition: 'all 0.3s ease',
+                          boxShadow: p.destacado ? '0 2px 8px rgba(255,215,0,0.3)' : 'none'
+                        }}
+                        title={p.destacado ? 'Quitar de destacados' : 'Marcar como destacado'}
+                      >
+                        {p.destacado ? '⭐ Destacado' : '☆ Normal'}
+                      </button>
+                    </td>
+                    <td style={{ padding: '16px 12px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button 
+                          onClick={() => handleEdit(p)} 
+                          style={{ 
+                            background: 'linear-gradient(135deg, #3498db, #2980b9)', 
+                            color: '#fff', 
+                            border: 'none', 
+                            borderRadius: 6, 
+                            padding: '8px 12px', 
+                            cursor: 'pointer', 
+                            fontWeight: 700,
+                            fontSize: '12px',
+                            boxShadow: '0 2px 4px rgba(52,152,219,0.3)'
+                          }}
+                        >
+                          📝 Editar
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(p.id)} 
+                          style={{ 
+                            background: 'linear-gradient(135deg, #e74c3c, #c0392b)', 
+                            color: '#fff', 
+                            border: 'none', 
+                            borderRadius: 6, 
+                            padding: '8px 12px', 
+                            cursor: 'pointer', 
+                            fontWeight: 700,
+                            fontSize: '12px',
+                            boxShadow: '0 2px 4px rgba(231,76,60,0.3)'
+                          }}
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       {showForm && (
         <div style={{ marginTop: 30, background: 'rgba(34,36,58,0.85)', borderRadius: 16, boxShadow: '0 4px 24px rgba(31,38,135,0.18)', backdropFilter: 'blur(10px)', padding: 24, border: '1.5px solid rgba(255,255,255,0.13)' }}>
           <h3 style={{ color: '#ffd700', fontWeight: 800 }}>{editing ? 'Editar Producto' : 'Agregar Producto'}</h3>
@@ -382,22 +904,51 @@ function AdminPanel({ onLogout, setToast }: Props) {
               />
               ⭐ Producto Destacado (mostrar en inicio)
             </label>
-            <div style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-              <label style={{ color: '#ffd700', fontWeight: 700, marginBottom: 4 }}>Imagen del producto</label>
-              <input type="file" accept="image/*" onChange={handleImageChange} style={{ color: '#fff', background: 'transparent' }} />
-              {imagePreview || form.image ? (
-                <img src={imagePreview || form.image} alt="Vista previa" style={{ marginTop: 8, maxWidth: 120, maxHeight: 120, borderRadius: 12, boxShadow: '0 2px 8px #0006', border: '1.5px solid #ffd700' }} />
-              ) : null}
-            </div>
+                         <div style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+               <label style={{ color: '#ffd700', fontWeight: 700, marginBottom: 4 }}>Imagen del producto</label>
+               <input type="file" accept="image/*,.svg" onChange={handleImageChange} style={{ color: '#fff', background: 'transparent' }} />
+               <small style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
+                 Formatos soportados: JPG, PNG, WebP, SVG (máx. 5MB)
+               </small>
+               {imagePreview || form.image ? (
+                 <img src={imagePreview || form.image} alt="Vista previa" style={{ marginTop: 8, maxWidth: 120, maxHeight: 120, borderRadius: 12, boxShadow: '0 2px 8px #0006', border: '1.5px solid #ffd700' }} />
+               ) : null}
+             </div>
             <button type="submit" style={{ background: '#ffd700', color: '#1a1a2e', fontWeight: 'bold', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', cursor: 'pointer', marginTop: 10 }}>{submitting ? 'Guardando...' : (editing ? 'Guardar Cambios' : 'Agregar')}</button>
             <button type="button" onClick={() => setShowForm(false)} style={{ background: '#ccc', color: '#222', border: 'none', borderRadius: 8, padding: '0.7rem 2rem', cursor: 'pointer', marginTop: 10 }}>Cancelar</button>
           </form>
         </div>
       )}
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Gestión de Usuarios</h2>
-      <button onClick={handleAddUser} style={{ marginBottom: 20, background: '#1a1a2e', color: '#ffd700', fontWeight: 'bold', border: 'none', borderRadius: 8, padding: '0.5rem 1.5rem', cursor: 'pointer' }}>
-        Agregar Usuario
-      </button>
+      </section>
+
+      {/* Sección de Usuarios */}
+      <section style={{ 
+        background: 'rgba(255,255,255,0.02)', 
+        borderRadius: '16px', 
+        padding: '2rem', 
+        marginBottom: '3rem',
+        border: '1px solid rgba(255,215,0,0.2)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ margin: 0, color: '#ffd700', fontWeight: 800, fontSize: '1.5rem' }}>
+            👥 Gestión de Usuarios
+          </h2>
+          <button 
+            onClick={handleAddUser} 
+            style={{ 
+              background: 'linear-gradient(135deg, #ffd700, #ffed4e)', 
+              color: '#1a1a2e', 
+              fontWeight: 'bold', 
+              border: 'none', 
+              borderRadius: 8, 
+              padding: '0.7rem 1.5rem', 
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(255,215,0,0.3)'
+            }}
+          >
+            ➕ Agregar Usuario
+          </button>
+        </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20, background: 'rgba(34,36,58,0.55)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px 0 rgba(26,26,46,0.10)' }}>
         <thead>
           <tr style={{ background: 'rgba(255,255,255,0.13)' }}>
@@ -436,7 +987,19 @@ function AdminPanel({ onLogout, setToast }: Props) {
           </form>
         </div>
       )}
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Historial de Pedidos</h2>
+      </section>
+
+      {/* Sección de Pedidos */}
+      <section style={{ 
+        background: 'rgba(255,255,255,0.02)', 
+        borderRadius: '16px', 
+        padding: '2rem', 
+        marginBottom: '3rem',
+        border: '1px solid rgba(255,215,0,0.2)'
+      }}>
+        <h2 style={{ margin: '0 0 1.5rem 0', color: '#ffd700', fontWeight: 800, fontSize: '1.5rem' }}>
+          📋 Historial de Pedidos
+        </h2>
       <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20, background: 'rgba(34,36,58,0.55)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px 0 rgba(26,26,46,0.10)' }}>
         <thead>
           <tr style={{ background: 'rgba(255,255,255,0.13)' }}>
@@ -486,71 +1049,84 @@ function AdminPanel({ onLogout, setToast }: Props) {
           </div>
         </div>
       )}
-      
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Actualización de Productos</h2>
-      <UpdateProducts />
-      
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Imágenes Aleatorias</h2>
-      <AddRandomImages />
-      
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Prueba de Cotizaciones</h2>
-      <TestQuotations />
-      
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Prueba de Eliminación de Cotizaciones</h2>
-      <TestDeleteQuotations />
-      
-      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Configuración de Firebase</h2>
-      <div style={{
-        padding: '2rem',
-        background: 'rgba(35,36,58,0.92)',
-        borderRadius: '12px',
-        margin: '2rem auto',
-        maxWidth: '600px',
-        textAlign: 'center'
+      </section>
+
+      {/* Sección de Herramientas y Utilidades */}
+      <section style={{ 
+        background: 'rgba(255,255,255,0.02)', 
+        borderRadius: '16px', 
+        padding: '2rem', 
+        marginBottom: '3rem',
+        border: '1px solid rgba(255,215,0,0.2)'
       }}>
-        <h3 style={{ color: '#ffd700', marginBottom: '1rem' }}>
-          Gestión de Configuración
-        </h3>
+        <h2 style={{ margin: '0 0 2rem 0', color: '#ffd700', fontWeight: 800, fontSize: '1.5rem' }}>
+          🛠️ Herramientas y Utilidades
+        </h2>
         
-        <p style={{ color: '#e0e0e0', marginBottom: '2rem' }}>
-          Si necesitas volver a ejecutar la configuración inicial de Firebase, usa este botón.
-        </p>
-        
-        <button
-          onClick={() => {
-            resetFirebaseSetup()
-            setToast({ show: true, message: 'Configuración reseteada. Recarga la página para volver a configurar.' })
-          }}
-          style={{
-            background: '#ff4444',
-            color: '#fff',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          Resetear Configuración de Firebase
-        </button>
-        
-        <div style={{
-          marginTop: '2rem',
-          textAlign: 'left',
-          background: 'rgba(0,0,0,0.2)',
-          padding: '1rem',
-          borderRadius: '8px'
-        }}>
-          <h4 style={{ color: '#ffd700', marginBottom: '0.5rem' }}>¿Cuándo usar esto?</h4>
-          <ul style={{ color: '#e0e0e0', fontSize: '14px' }}>
-            <li>Si cambias la configuración de Firebase</li>
-            <li>Si necesitas volver a migrar datos iniciales</li>
-            <li>Si hay problemas con la configuración</li>
-            <li>Para desarrollo y pruebas</li>
-          </ul>
+        <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+          <div>
+            <h3 style={{ color: '#ffd700', fontSize: '1.2rem', marginBottom: '1rem' }}>💰 Actualización de Precios</h3>
+            <UpdateProducts />
+          </div>
+          
+          <div>
+            <h3 style={{ color: '#ffd700', fontSize: '1.2rem', marginBottom: '1rem' }}>🖼️ Gestión de Imágenes</h3>
+            <AddRandomImages />
+          </div>
         </div>
-      </div>
+        
+        <div style={{ 
+          display: 'grid', 
+          gap: '2rem', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          marginTop: '2rem'
+        }}>
+          <div>
+            <h3 style={{ color: '#ffd700', fontSize: '1.2rem', marginBottom: '1rem' }}>📄 Pruebas de Cotizaciones</h3>
+            <TestQuotations />
+            <div style={{ marginTop: '1rem' }}>
+              <TestDeleteQuotations />
+            </div>
+          </div>
+          
+          <div>
+            <h3 style={{ color: '#ffd700', fontSize: '1.2rem', marginBottom: '1rem' }}>⚙️ Configuración de Firebase</h3>
+            <div style={{
+              padding: '1.5rem',
+              background: 'rgba(35,36,58,0.92)',
+              borderRadius: '12px',
+              textAlign: 'center'
+            }}>
+              <p style={{ color: '#e0e0e0', marginBottom: '1.5rem', fontSize: '14px' }}>
+                Si necesitas volver a ejecutar la configuración inicial de Firebase.
+              </p>
+              
+              <button
+                onClick={() => {
+                  resetFirebaseSetup()
+                  setToast({ show: true, message: 'Configuración reseteada. Recarga la página para volver a configurar.' })
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #e74c3c, #c0392b)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(231,76,60,0.3)'
+                }}
+              >
+                🔄 Resetear Firebase
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Componente de progreso de carga de imágenes */}
+      <ImageUploadProgress isUploading={isImageUploading} progress={uploadProgress} />
     </div>
   )
 }

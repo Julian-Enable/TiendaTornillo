@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import './Navbar.css'
 import { useState } from 'react'
+import logo from '../assets/Logo Universal De Tornilos Y Ferreteria.png'
 
 function CartIcon() {
   return (
@@ -29,7 +30,10 @@ function Navbar() {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          Tienda de Tornillos
+          <img 
+            src={logo} 
+            alt="Universal de Tornillos y Ferretería" 
+          />
         </Link>
         <button className="hamburger-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú de navegación" style={{ display: 'flex' }}>
           <span className="hamburger-bar"></span>

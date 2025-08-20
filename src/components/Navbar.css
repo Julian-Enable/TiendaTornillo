@@ -1,6 +1,6 @@
 .navbar {
   background: rgba(26, 26, 46, 0.28); /* Más transparente */
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -21,6 +21,21 @@
   text-decoration: none;
   font-size: 1.5rem;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo img {
+  height: 66px;
+  width: auto;
+  max-width: 330px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease;
+}
+
+.navbar-logo img:hover {
+  transform: scale(1.05);
 }
 
 .nav-menu {
@@ -138,6 +153,11 @@
   .nav-auth-desktop {
     display: none !important;
   }
+  
+  .navbar-logo img {
+    height: 59px;
+    max-width: 290px;
+  }
   .hamburger-menu-panel {
     display: flex;
     flex-direction: column;
@@ -192,5 +212,10 @@
     width: 95vw;
     max-width: 99vw;
     padding: 4.5rem 0.5rem 1.5rem 0.5rem;
+  }
+  
+  .navbar-logo img {
+    height: 53px;
+    max-width: 264px;
   }
 } 

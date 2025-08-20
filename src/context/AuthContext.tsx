@@ -30,19 +30,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Escuchar cambios en el estado de autenticación de Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
+      console.log('🔄 Auth state changed:', firebaseUser ? 'User logged in' : 'User logged out')
+      
+      if (firebaseUser && firebaseUser.email) {
         try {
+          console.log('🔍 Buscando usuario en Firestore:', firebaseUser.email)
           // Buscar usuario en Firestore
-          const userData = await getUserByEmail(firebaseUser.email!)
+          const userData = await getUserByEmail(firebaseUser.email)
           if (userData) {
+            console.log('✅ Usuario encontrado:', userData)
             setUser(userData)
             // Actualizar último login
-            await updateLastLogin(userData.id)
+            try {
+              await updateLastLogin(userData.id)
+              console.log('✅ Último login actualizado')
+            } catch (error) {
+              console.warn('⚠️ No se pudo actualizar último login:', error)
+            }
+          } else {
+            console.warn('⚠️ Usuario no encontrado en Firestore')
+            setUser(null)
           }
         } catch (error) {
-          console.error('Error al obtener datos del usuario:', error)
+          console.error('❌ Error al obtener datos del usuario:', error)
+          setUser(null)
         }
       } else {
+        console.log('👤 Usuario no autenticado')
         setUser(null)
       }
       setLoading(false)

@@ -12,6 +12,7 @@ export interface Product {
     material?: string
     type?: string
   }
+  destacado?: boolean // Para marcar productos destacados
 }
 
 // export const products: Product[] = [ ... ]; // Eliminado para forzar uso de Firestore
