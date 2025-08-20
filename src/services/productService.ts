@@ -145,3 +145,38 @@ export const getLowStockProducts = async (threshold: number = 10): Promise<Produ
     throw error
   }
 }
+
+// Obtener productos destacados
+export const getFeaturedProducts = async (): Promise<Product[]> => {
+  try {
+    const q = query(
+      collection(db, COLLECTION_NAME), 
+      where('destacado', '==', true)
+    )
+    const querySnapshot = await getDocs(q)
+    const products = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Product[]
+    
+    // Ordenar por nombre en el cliente
+    return products.sort((a, b) => a.name.localeCompare(b.name))
+  } catch (error) {
+    console.error('Error al obtener productos destacados:', error)
+    throw error
+  }
+}
+
+// Marcar/desmarcar producto como destacado
+export const toggleFeaturedProduct = async (id: string, destacado: boolean): Promise<void> => {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id)
+    await updateDoc(docRef, {
+      destacado,
+      updatedAt: serverTimestamp()
+    })
+  } catch (error) {
+    console.error('Error al actualizar producto destacado:', error)
+    throw error
+  }
+}

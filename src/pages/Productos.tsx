@@ -289,86 +289,151 @@ function Productos() {
         <>
           <div className="products-grid">
             {filteredProducts.map(product => (
-              <div key={product.id} className="product-card" 
-                style={{ 
-                  display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: 440, padding: '8px 0 0 0', cursor: 'pointer', transition: 'box-shadow 0.2s',
-                  boxShadow: '0 2px 12px 0 rgba(26,26,46,0.10)',
-                  border: '1.5px solid rgba(255,255,255,0.08)'
-                }}
+              <div 
+                key={product.id} 
+                className="product-card-improved" 
                 onClick={() => navigate(`/producto/${product.id}`)}
                 tabIndex={0}
                 role="button"
                 aria-label={`Ver detalles de ${product.name}`}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') navigate(`/producto/${product.id}`) }}
               >
-                <div className="product-image" style={{ alignSelf: 'center', marginTop: 0, marginBottom: 0 }}>
-                  {product.image ? (
-                    <img src={product.image} alt={product.name} style={{ maxWidth: 110, maxHeight: 110, borderRadius: '50%', objectFit: 'cover', margin: '0 auto' }} />
-                  ) : (
-                    <div className="placeholder-image" style={{ width: 110, height: 110, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, background: '#22336b', color: '#ffd700', margin: '0 auto' }}>
-                      {product.category.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <div className="product-info" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }}>
-                  <h3
-                    style={{ fontSize: 22, fontWeight: 800, color: '#f5f7fa', margin: '12px 0 4px 0', lineHeight: 1.1, textAlign: 'center', minHeight: 28 }}
-                  >
-                    {product.name || 'Producto sin nombre'}
-                  </h3>
-                  {product.specifications && (
-                    <div className="product-specs" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, width: '100%', alignItems: 'center' }}>
-                      <span className="spec" style={{ 
-                        background: 'rgba(255,255,255,0.10)', 
-                        color: '#ffd700', 
-                        borderRadius: 12, 
-                        padding: '7px 20px', 
-                        fontWeight: 700, 
-                        fontSize: 15, 
-                        marginBottom: 2, 
-                        border: '1.5px solid rgba(255,255,255,0.25)', 
-                        backdropFilter: 'blur(8px)', 
-                        boxShadow: '0 2px 8px rgba(26,26,46,0.10)'
-                      }}>
-                        {product.specifications.size && product.specifications.size.trim() !== '' ? `Tamaño: ${product.specifications.size}` : 'Tamaño: No especificado'}
-                      </span>
-                      <span className="spec" style={{ 
-                        background: 'rgba(255,255,255,0.10)', 
-                        color: '#f5f7fa', 
-                        borderRadius: 12, 
-                        padding: '7px 20px', 
-                        fontWeight: 700, 
-                        fontSize: 15, 
-                        border: '1.5px solid rgba(255,255,255,0.25)', 
-                        backdropFilter: 'blur(8px)', 
-                        boxShadow: '0 2px 8px rgba(26,26,46,0.10)'
-                      }}>
-                        {product.specifications.material && product.specifications.material.trim() !== '' ? `Material: ${product.specifications.material}` : 'Material: No especificado'}
-                      </span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 18, margin: '10px 0 8px 0', alignItems: 'flex-end', justifyContent: 'center', width: '100%' }}>
-                    <div style={{ background: 'rgba(35,36,58,0.92)', borderRadius: 12, padding: '10px 18px', minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }}>
-                      <span style={{ fontWeight: 700, color: '#e0e0e0', fontSize: 16, marginBottom: 2 }}>Unidad</span>
-                      <span style={{ fontWeight: 700, color: '#e0e0e0', fontSize: 18 }}>{product.priceUnit.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
-                    </div>
-                    <div style={{ background: 'rgba(35,36,58,0.92)', borderRadius: 12, padding: '10px 18px', minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 8px rgba(26,26,46,0.10)' }}>
-                      <span style={{ fontWeight: 700, color: '#ffd700', fontSize: 16, marginBottom: 2 }}>Mayor (50+)</span>
-                      <span style={{ fontWeight: 700, color: '#ffd700', fontSize: 18 }}>{product.priceBulk.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}</span>
+                {/* Badge de stock bajo */}
+                {product.stock <= 10 && product.stock > 0 && (
+                  <div className="low-stock-badge">
+                    ⚡ ¡Últimas {product.stock} unidades!
+                  </div>
+                )}
+                
+                {/* Badge de sin stock */}
+                {product.stock === 0 && (
+                  <div className="out-of-stock-badge">
+                    😔 Agotado
+                  </div>
+                )}
+
+                {/* Header con imagen */}
+                <div className="product-header">
+                  <div className="product-image-container">
+                    {product.image ? (
+                      <img 
+                        src={product.image} 
+                        alt={product.name} 
+                        className="product-image"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="product-placeholder">
+                        <span className="category-icon">
+                          {product.category === 'Tornillos' ? '🔩' : 
+                           product.category === 'Tuercas' ? '⚙️' : 
+                           product.category === 'Herramientas' ? '🔨' : 
+                           product.category === 'Arandelas' ? '⭕' : '🛠️'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Indicador de categoría */}
+                    <div className="category-indicator">
+                      {product.category}
                     </div>
                   </div>
-                  <span className="stock" style={{ color: '#bfc4d1', fontSize: 13, margin: '4px 0 0 0', textAlign: 'center', display: 'block', fontWeight: 400, letterSpacing: 0.2 }}>
-                    <span role="img" aria-label="stock" style={{ marginRight: 4 }}>📦</span>Stock: {product.stock}
-                  </span>
                 </div>
-                <button
-                  className="add-to-cart-btn"
-                  style={{ margin: '18px 0 10px 0', alignSelf: 'center', width: '90%', background: '#ffd700', color: '#1a1a2e', fontWeight: 800, fontSize: 17, borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(26,26,46,0.10)', transition: 'background 0.2s' }}
-                  onClick={e => { e.stopPropagation(); handleAddToCart(product); }}
-                  disabled={product.stock === 0}
-                >
-                  {product.stock === 0 ? 'Sin Stock' : 'Agregar al Carrito'}
-                </button>
+
+                {/* Información del producto */}
+                <div className="product-content">
+                  <h3 className="product-title" title={product.name}>
+                    {product.name}
+                  </h3>
+
+                  {/* Especificaciones mejoradas */}
+                  <div className="product-specs-improved">
+                    {product.specifications?.size && (
+                      <div className="spec-item size">
+                        <span className="spec-icon">📏</span>
+                        <span className="spec-value">{product.specifications.size}</span>
+                      </div>
+                    )}
+                    {product.specifications?.material && (
+                      <div className="spec-item material">
+                        <span className="spec-icon">🔗</span>
+                        <span className="spec-value">{product.specifications.material}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sección de precios mejorada */}
+                  <div className="pricing-section">
+                    <div className="price-container">
+                      <div className="price-card unit-price">
+                        <div className="price-label">
+                          <span className="price-icon">🏪</span>
+                          Unitario
+                        </div>
+                        <div className="price-value">
+                          {product.priceUnit.toLocaleString('es-CO', { 
+                            style: 'currency', 
+                            currency: 'COP', 
+                            maximumFractionDigits: 0 
+                          })}
+                        </div>
+                      </div>
+                      
+                      <div className="price-divider">vs</div>
+                      
+                      <div className="price-card bulk-price">
+                        <div className="price-label">
+                          <span className="price-icon">📦</span>
+                          Mayor (50+)
+                        </div>
+                        <div className="price-value">
+                          {product.priceBulk.toLocaleString('es-CO', { 
+                            style: 'currency', 
+                            currency: 'COP', 
+                            maximumFractionDigits: 0 
+                          })}
+                        </div>
+                        <div className="savings-indicator">
+                          -{Math.round(((product.priceUnit - product.priceBulk) / product.priceUnit) * 100)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stock y disponibilidad */}
+                  <div className="stock-info">
+                    <div className={`stock-indicator ${product.stock <= 10 ? 'low' : 'good'}`}>
+                      <span className="stock-icon">
+                        {product.stock === 0 ? '❌' : product.stock <= 10 ? '⚠️' : '✅'}
+                      </span>
+                      <span className="stock-text">
+                        {product.stock === 0 ? 'Sin stock' : 
+                         product.stock <= 10 ? `Quedan ${product.stock}` : 
+                         `${product.stock} disponibles`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer con botón de acción */}
+                <div className="product-footer">
+                  <button
+                    className={`add-to-cart-btn-improved ${product.stock === 0 ? 'disabled' : ''}`}
+                    onClick={e => { 
+                      e.stopPropagation(); 
+                      handleAddToCart(product); 
+                    }}
+                    disabled={product.stock === 0}
+                    aria-label={product.stock === 0 ? 'Producto agotado' : `Agregar ${product.name} al carrito`}
+                  >
+                    <span className="btn-icon">
+                      {product.stock === 0 ? '😞' : '🛒'}
+                    </span>
+                    <span className="btn-text">
+                      {product.stock === 0 ? 'Agotado' : 'Agregar al Carrito'}
+                    </span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>

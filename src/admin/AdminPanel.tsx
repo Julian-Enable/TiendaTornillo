@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { categories } from '../data/products'
 import type { Product } from '../data/products'
-import { getProducts, createProduct, updateProduct, deleteProduct } from '../services/productService'
+import { getProducts, createProduct, updateProduct, deleteProduct, toggleFeaturedProduct } from '../services/productService'
 import { getUsers, createUser, updateUser, deleteUser } from '../services/userService'
 import type { User } from '../services/userService'
 import UpdateProducts from '../components/UpdateProducts'
 import TestQuotations from '../components/TestQuotations'
 import TestDeleteQuotations from '../components/TestDeleteQuotations'
+import AddRandomImages from '../components/AddRandomImages'
 import { resetFirebaseSetup } from '../utils/firebaseReset'
 
 interface Props {
@@ -129,6 +130,20 @@ function AdminPanel({ onLogout, setToast }: Props) {
     } catch (error) {
       console.error('Error al eliminar producto:', error)
       setToast({ show: true, message: 'Error al eliminar producto' })
+    }
+  }
+
+  const handleToggleFeatured = async (id: string, destacado: boolean) => {
+    try {
+      await toggleFeaturedProduct(id, destacado)
+      setProducts(products.map(p => p.id === id ? { ...p, destacado } : p))
+      setToast({ 
+        show: true, 
+        message: destacado ? 'Producto marcado como destacado' : 'Producto removido de destacados'
+      })
+    } catch (error) {
+      console.error('Error al actualizar producto destacado:', error)
+      setToast({ show: true, message: 'Error al actualizar producto destacado' })
     }
   }
 
@@ -303,6 +318,7 @@ function AdminPanel({ onLogout, setToast }: Props) {
             <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Precio Unidad</th>
             <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Precio Mayorista</th>
             <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Stock</th>
+            <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Destacado</th>
             <th style={{ color: '#fff', fontWeight: 800, fontSize: 17 }}>Acciones</th>
           </tr>
         </thead>
@@ -314,6 +330,25 @@ function AdminPanel({ onLogout, setToast }: Props) {
               <td style={{ color: '#ffd700', fontWeight: 700 }}>${p.priceUnit.toLocaleString('es-CO')}</td>
               <td style={{ color: '#ffd700', fontWeight: 700 }}>${p.priceBulk.toLocaleString('es-CO')}</td>
               <td style={{ color: '#bfc4d1', fontWeight: 500 }}>{p.stock}</td>
+              <td style={{ textAlign: 'center' }}>
+                <button
+                  onClick={() => handleToggleFeatured(p.id, !p.destacado)}
+                  style={{
+                    background: p.destacado ? '#ffd700' : 'rgba(255,255,255,0.1)',
+                    color: p.destacado ? '#1a1a2e' : '#ffd700',
+                    border: '2px solid #ffd700',
+                    borderRadius: 20,
+                    padding: '4px 12px',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    transition: 'all 0.3s ease'
+                  }}
+                  title={p.destacado ? 'Quitar de destacados' : 'Marcar como destacado'}
+                >
+                  {p.destacado ? '⭐ Destacado' : '☆ Normal'}
+                </button>
+              </td>
               <td>
                 <button onClick={() => handleEdit(p)} style={{ marginRight: 8, background: '#1a1a2e', color: '#ffd700', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontWeight: 700 }}>Editar</button>
                 <button onClick={() => handleDelete(p.id)} style={{ background: '#ff4444', color: 'white', border: 'none', borderRadius: 6, padding: '0.3rem 0.8rem', cursor: 'pointer', fontWeight: 700 }}>Eliminar</button>
@@ -337,6 +372,16 @@ function AdminPanel({ onLogout, setToast }: Props) {
             <input name="spec_size" value={form.specifications?.size || ''} onChange={handleChange} placeholder="Tamaño" style={{ flex: '1 1 100px', padding: 10, borderRadius: 8, border: '1.5px solid #ffd700', background: 'rgba(20,22,40,0.7)', color: '#fff', fontWeight: 600 }} />
             <input name="spec_material" value={form.specifications?.material || ''} onChange={handleChange} placeholder="Material" style={{ flex: '1 1 100px', padding: 10, borderRadius: 8, border: '1.5px solid #ffd700', background: 'rgba(20,22,40,0.7)', color: '#fff', fontWeight: 600 }} />
             <input name="spec_type" value={form.specifications?.type || ''} onChange={handleChange} placeholder="Tipo" style={{ flex: '1 1 100px', padding: 10, borderRadius: 8, border: '1.5px solid #ffd700', background: 'rgba(20,22,40,0.7)', color: '#fff', fontWeight: 600 }} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, color: '#ffd700', flex: '1 1 200px' }}>
+              <input 
+                type="checkbox" 
+                name="destacado" 
+                checked={!!form.destacado} 
+                onChange={e => setForm({ ...form, destacado: e.target.checked })}
+                style={{ width: 18, height: 18 }}
+              />
+              ⭐ Producto Destacado (mostrar en inicio)
+            </label>
             <div style={{ flex: '2 1 300px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
               <label style={{ color: '#ffd700', fontWeight: 700, marginBottom: 4 }}>Imagen del producto</label>
               <input type="file" accept="image/*" onChange={handleImageChange} style={{ color: '#fff', background: 'transparent' }} />
@@ -444,6 +489,9 @@ function AdminPanel({ onLogout, setToast }: Props) {
       
       <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Actualización de Productos</h2>
       <UpdateProducts />
+      
+      <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Imágenes Aleatorias</h2>
+      <AddRandomImages />
       
       <h2 style={{ marginTop: 48, color: '#ffd700', fontWeight: 800 }}>Prueba de Cotizaciones</h2>
       <TestQuotations />

@@ -2,6 +2,9 @@ import './Home.css'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSeo } from '../hooks/useSeo'
+import { useState, useEffect } from 'react'
+import { getFeaturedProducts } from '../services/productService'
+import type { Product } from '../data/products'
 
 function Home() {
   useSeo({
@@ -10,6 +13,66 @@ function Home() {
   })
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+
+  useEffect(() => {
+    const loadFeaturedProducts = async () => {
+      try {
+        setLoading(true)
+        const products = await getFeaturedProducts()
+        console.log('🌟 Productos destacados cargados:', products)
+        setFeaturedProducts(products)
+      } catch (error) {
+        console.error('Error al cargar productos destacados:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadFeaturedProducts()
+  }, [])
+
+  // Auto-play del carrusel
+  useEffect(() => {
+    if (!isAutoPlaying || featuredProducts.length <= 1) return
+
+    const interval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % Math.ceil(featuredProducts.length / getItemsPerSlide()))
+    }, 4000) // Cambiar cada 4 segundos
+
+    return () => clearInterval(interval)
+  }, [featuredProducts.length, isAutoPlaying])
+
+  // Función para determinar cuántos productos mostrar por slide según el tamaño de pantalla
+  const getItemsPerSlide = () => {
+    return 1 // Siempre 1 producto por slide para mejor presentación
+  }
+
+  const totalSlides = Math.ceil(featuredProducts.length / getItemsPerSlide())
+
+  const nextSlide = () => {
+    setCurrentSlide(prev => (prev + 1) % totalSlides)
+    setIsAutoPlaying(false) // Pausar auto-play cuando el usuario interactúa
+  }
+
+  const prevSlide = () => {
+    setCurrentSlide(prev => (prev - 1 + totalSlides) % totalSlides)
+    setIsAutoPlaying(false)
+  }
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index)
+    setIsAutoPlaying(false)
+  }
+
+  const getCurrentSlideProducts = () => {
+    const itemsPerSlide = getItemsPerSlide()
+    const startIndex = currentSlide * itemsPerSlide
+    return featuredProducts.slice(startIndex, startIndex + itemsPerSlide)
+  }
   return (
     <div className="home">
       {/* H1 oculto solo para SEO y accesibilidad */}
@@ -44,6 +107,200 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* Carrusel de Productos Destacados */}
+      {featuredProducts.length > 0 && (
+        <section className="featured-carousel-section">
+          <div className="featured-header">
+            <h2 className="featured-title">
+              <span className="featured-icon">⭐</span>
+              Productos Destacados
+            </h2>
+            <p className="featured-subtitle">
+              Los mejores productos seleccionados especialmente para ti
+            </p>
+          </div>
+
+          <div className="carousel-container">
+            {loading ? (
+              <div className="featured-loading">
+                <div className="loading-spinner"></div>
+                <p>Cargando productos destacados...</p>
+              </div>
+            ) : (
+              <>
+                {/* Botones de navegación */}
+                {totalSlides > 1 && (
+                  <>
+                    <button 
+                      className="carousel-btn carousel-btn-prev"
+                      onClick={prevSlide}
+                      aria-label="Producto anterior"
+                    >
+                      <span className="carousel-arrow">‹</span>
+                    </button>
+                    
+                    <button 
+                      className="carousel-btn carousel-btn-next"
+                      onClick={nextSlide}
+                      aria-label="Siguiente producto"
+                    >
+                      <span className="carousel-arrow">›</span>
+                    </button>
+                  </>
+                )}
+
+                {/* Carrusel de productos */}
+                <div className="carousel-wrapper">
+                  <div 
+                    className="carousel-track"
+                    style={{
+                      transform: `translateX(-${currentSlide * 100}%)`,
+                      transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    {Array.from({ length: totalSlides }).map((_, slideIndex) => {
+                      const slideProducts = featuredProducts.slice(
+                        slideIndex * getItemsPerSlide(),
+                        (slideIndex + 1) * getItemsPerSlide()
+                      )
+                      
+                      return (
+                        <div key={slideIndex} className="carousel-slide">
+                          <div className="carousel-products-grid">
+                            {slideProducts.map(product => (
+                              <div 
+                                key={product.id} 
+                                className="carousel-product-card"
+                                onClick={() => navigate(`/producto/${product.id}`)}
+                              >
+                                {/* Badge de destacado */}
+                                <div className="carousel-badge">
+                                  ⭐ Destacado
+                                </div>
+
+                                {/* Imagen del producto */}
+                                <div className="carousel-product-image">
+                                  {product.image ? (
+                                    <img 
+                                      src={product.image} 
+                                      alt={product.name}
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="carousel-placeholder">
+                                      <span className="carousel-category-icon">
+                                        {product.category === 'Tornillos' ? '🔩' : 
+                                         product.category === 'Tuercas' ? '⚙️' : 
+                                         product.category === 'Herramientas' ? '🔨' : 
+                                         product.category === 'Arandelas' ? '⭕' : '🛠️'}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Información del producto */}
+                                <div className="carousel-product-info">
+                                  <div className="carousel-category">
+                                    {product.category}
+                                  </div>
+                                  <h3 className="carousel-product-name">
+                                    {product.name}
+                                  </h3>
+                                  <p className="carousel-product-description">
+                                    {product.description}
+                                  </p>
+
+                                  {/* Precios */}
+                                  <div className="carousel-pricing">
+                                    <div className="carousel-price-main">
+                                      <span className="carousel-price-label">Desde</span>
+                                      <span className="carousel-price-amount">
+                                        {product.priceBulk.toLocaleString('es-CO', { 
+                                          style: 'currency', 
+                                          currency: 'COP', 
+                                          maximumFractionDigits: 0 
+                                        })}
+                                      </span>
+                                    </div>
+                                    <div className="carousel-price-note">
+                                      *Precio mayorista (50+ unidades)
+                                    </div>
+                                  </div>
+
+                                  {/* Stock */}
+                                  <div className={`carousel-stock ${product.stock <= 10 ? 'low' : 'good'}`}>
+                                    <span className="stock-icon">
+                                      {product.stock === 0 ? '❌' : product.stock <= 10 ? '⚠️' : '✅'}
+                                    </span>
+                                    <span className="stock-text">
+                                      {product.stock === 0 ? 'Agotado' : 
+                                       product.stock <= 10 ? `Últimas ${product.stock}` : 
+                                       'Disponible'}
+                                    </span>
+                                  </div>
+
+                                  {/* Botón de acción */}
+                                  <button 
+                                    className="carousel-cta-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigate(`/producto/${product.id}`)
+                                    }}
+                                  >
+                                    <span className="btn-icon">👀</span>
+                                    <span className="btn-text">Ver Detalles</span>
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Indicadores de puntos */}
+                {totalSlides > 1 && (
+                  <div className="carousel-indicators">
+                    {Array.from({ length: totalSlides }).map((_, index) => (
+                      <button
+                        key={index}
+                        className={`carousel-dot ${index === currentSlide ? 'active' : ''}`}
+                        onClick={() => goToSlide(index)}
+                        aria-label={`Ir al slide ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Controles de auto-play */}
+                <div className="carousel-controls">
+                  <button
+                    className={`play-pause-btn ${isAutoPlaying ? 'playing' : 'paused'}`}
+                    onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                    title={isAutoPlaying ? 'Pausar carrusel' : 'Reproducir carrusel'}
+                  >
+                    {isAutoPlaying ? '⏸️' : '▶️'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Link para ver todos los productos */}
+          <div className="carousel-footer">
+            <button 
+              className="view-all-btn"
+              onClick={() => navigate('/productos')}
+            >
+              <span>Ver Todos los Productos</span>
+              <span className="arrow">→</span>
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="features">
         <h2>¿Por qué elegirnos?</h2>
