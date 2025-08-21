@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
+  sendPasswordResetEmail,
   type User as FirebaseUser 
 } from 'firebase/auth'
 import { auth } from '../config/firebase'
@@ -18,6 +19,7 @@ interface AuthContextType {
   loading: boolean
   login: (email: string, password: string) => Promise<boolean>
   register: (name: string, email: string, password: string) => Promise<boolean>
+  resetPassword: (email: string) => Promise<boolean>
   logout: () => void
 }
 
@@ -81,8 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true)
+      console.log('🚀 Iniciando registro para:', email)
+      
       // Crear usuario en Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      console.log('✅ Usuario creado en Firebase Auth:', userCredential.user.uid)
       
       // Crear usuario en Firestore
       const userData: Omit<User, 'id'> = {
@@ -91,10 +96,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: false
       }
       
-      await createUser(userData)
+      console.log('📝 Creando usuario en Firestore...')
+      const userId = await createUser(userData)
+      console.log('✅ Usuario creado en Firestore con ID:', userId)
+      
       return true
-    } catch (error) {
-      console.error('Error en registro:', error)
+    } catch (error: any) {
+      console.error('❌ Error en registro:', error)
+      console.error('❌ Código de error:', error.code)
+      console.error('❌ Mensaje de error:', error.message)
+      
+      // Si el error es de Firebase Auth, no continuar
+      if (error.code && error.code.startsWith('auth/')) {
+        console.error('❌ Error de Firebase Auth, no se creará usuario en Firestore')
+        return false
+      }
+      
+      // Si el error es de Firestore, intentar limpiar el usuario de Auth
+      if (error.code && error.code.startsWith('firestore/')) {
+        console.error('❌ Error de Firestore, limpiando usuario de Auth...')
+        try {
+          if (auth.currentUser) {
+            await auth.currentUser.delete()
+            console.log('✅ Usuario eliminado de Auth después del error de Firestore')
+          }
+        } catch (deleteError) {
+          console.error('❌ Error al eliminar usuario de Auth:', deleteError)
+        }
+      }
+      
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetPassword = async (email: string): Promise<boolean> => {
+    try {
+      setLoading(true)
+      console.log('🔄 Enviando email de reset para:', email)
+      
+      await sendPasswordResetEmail(auth, email)
+      console.log('✅ Email de reset enviado correctamente')
+      
+      return true
+    } catch (error: any) {
+      console.error('❌ Error al enviar email de reset:', error)
+      console.error('❌ Código de error:', error.code)
+      console.error('❌ Mensaje de error:', error.message)
+      
+      // Manejar errores específicos
+      if (error.code === 'auth/user-not-found') {
+        console.error('❌ Usuario no encontrado con ese email')
+      } else if (error.code === 'auth/invalid-email') {
+        console.error('❌ Email inválido')
+      } else if (error.code === 'auth/too-many-requests') {
+        console.error('❌ Demasiadas solicitudes, intenta más tarde')
+      } else {
+        console.error('❌ Error desconocido:', error.code)
+      }
+      
       return false
     } finally {
       setLoading(false)
@@ -116,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     login,
     register,
+    resetPassword,
     logout
   }
 

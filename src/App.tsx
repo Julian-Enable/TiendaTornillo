@@ -6,6 +6,7 @@ import Productos from './pages/Productos.tsx'
 import Carrito from './pages/Carrito.tsx'
 import Registro from './pages/Registro.tsx'
 import Login from './pages/Login.tsx'
+import ResetPassword from './pages/ResetPassword.tsx'
 import Perfil from './pages/Perfil.tsx'
 import Contacto from './pages/Contacto'
 import SobreNosotros from './pages/SobreNosotros'
@@ -39,6 +40,7 @@ function App() {
         <Route path="carrito" element={<Carrito />} />
         <Route path="registro" element={<Registro />} />
         <Route path="login" element={<Login />} />
+        <Route path="reset-password" element={<ResetPassword />} />
         <Route path="perfil" element={<Perfil />} />
         <Route path="contacto" element={<Contacto />} />
         <Route path="sobre-nosotros" element={<SobreNosotros />} />

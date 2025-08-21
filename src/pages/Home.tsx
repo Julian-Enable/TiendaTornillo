@@ -80,7 +80,7 @@ function Home() {
         Universal de Tornillos y Ferretería: tornillos, tuercas y ferretería en Bogotá
       </h1>
       <section className="hero">
-        <div className="hero-content" style={{ boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18)', borderRadius: 24, background: 'rgba(20,22,40,0.82)', padding: '3.5rem 2.5rem 3.5rem 2.5rem', maxWidth: 700, margin: '0 auto', marginTop: 24 }}>
+        <div className="hero-content" style={{ boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18)', borderRadius: 24, background: 'rgba(20,22,40,0.82)', padding: '3.5rem 2.5rem 3.5rem 2.5rem', maxWidth: 1800, margin: '0 auto', marginTop: 24 }}>
           {/* Subtítulo visible con palabras clave */}
           <p style={{ fontSize: 20, color: 'rgba(255,255,255,0.85)', fontWeight: 600, marginBottom: 22, marginTop: 0, textAlign: 'center', letterSpacing: 0.2, fontFamily: 'Poppins, Inter, Arial, sans-serif' }}>
             Tu ferretería especializada en tornillos, tuercas y ferretería en Bogotá

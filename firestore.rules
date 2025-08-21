@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Productos - lectura pública, escritura para autenticados
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Categorías - lectura pública, escritura para autenticados  
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Usuarios - CLAVE PARA LA PERSISTENCIA
+    match /users/{userId} {
+      // Permitir creación de usuarios (para el registro)
+      allow create: if request.auth != null;
+      
+      // Cada usuario puede acceder a sus propios datos (ESENCIAL para onAuthStateChanged)
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // TAMBIÉN permitir lectura por email para getUserByEmail (sin circular dependency)
+      allow read: if request.auth != null;
+    }
+    
+    // Perfiles de usuario
+    match /userProfiles/{profileId} {
+      allow read, write: if request.auth != null && 
+                           (resource == null || resource.data.userId == request.auth.uid);
+    }
+    
+    // Órdenes - usuario ve sus órdenes
+    match /orders/{orderId} {
+      allow read: if request.auth != null && 
+                    (resource == null || resource.data.userId == request.auth.uid);
+      allow write: if request.auth != null;
+    }
+    
+    // Cotizaciones - usuario ve sus cotizaciones  
+    match /quotations/{quotationId} {
+      allow read: if request.auth != null && 
+                    (resource == null || resource.data.userId == request.auth.uid);
+      allow write: if request.auth != null;
+    }
+  }
+}

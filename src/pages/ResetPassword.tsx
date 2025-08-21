@@ -4,33 +4,36 @@ import { useAuth } from '../context/AuthContext'
 import './Auth.css'
 import { useSeo } from '../hooks/useSeo'
 
-function Login() {
+function ResetPassword() {
   useSeo({
-    title: 'Iniciar Sesión | Tienda de Tornillos',
-    description: 'Accede a tu cuenta para comprar, ver tu historial y gestionar tus datos en la Tienda de Tornillos.'
+    title: 'Restablecer Contraseña | Tienda de Tornillos',
+    description: 'Restablece tu contraseña de forma segura en la Tienda de Tornillos.'
   })
+  
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   
-  const { login } = useAuth()
+  const { resetPassword } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
     setLoading(true)
 
     try {
-      const success = await login(email, password)
+      const success = await resetPassword(email)
       if (success) {
-        navigate('/')
+        setSuccess('Se ha enviado un email con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada y carpeta de spam.')
+        setEmail('')
       } else {
-        setError('Credenciales inválidas')
+        setError('No se pudo enviar el email. Verifica que el email esté registrado.')
       }
     } catch (err) {
-      setError('Error al iniciar sesión')
+      setError('Error al procesar la solicitud')
     } finally {
       setLoading(false)
     }
@@ -39,9 +42,10 @@ function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Iniciar Sesión</h2>
+        <h2>Restablecer Contraseña</h2>
         
         {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
         
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
@@ -56,32 +60,17 @@ function Login() {
             />
           </div>
           
-          <div className="form-group">
-            <label htmlFor="password">Contraseña</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="Tu contraseña"
-            />
-          </div>
-          
           <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            {loading ? 'Enviando...' : 'Enviar Email'}
           </button>
         </form>
         
         <p className="auth-footer">
-          ¿No tienes cuenta? <a href="/registro">Regístrate aquí</a>
-        </p>
-        <p className="auth-footer">
-          <a href="/reset-password">¿Olvidaste tu contraseña?</a>
+          <a href="/login">Volver al login</a>
         </p>
       </div>
     </div>
   )
 }
 
-export default Login 
+export default ResetPassword

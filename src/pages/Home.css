@@ -12,9 +12,9 @@
 }
 
 .hero-content {
-  max-width: 1600px;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 6.5rem 1rem 6.5rem 1rem;
+  padding: 6.5rem 2rem 6.5rem 2rem;
   min-height: 520px;
   background: transparent;
   border-radius: 24px;
@@ -107,10 +107,10 @@
 
 /* ===== CARRUSEL DE PRODUCTOS DESTACADOS ===== */
 .featured-carousel-section {
-  padding: 80px 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  background: linear-gradient(135deg, rgba(26, 26, 46, 0.02), rgba(34, 51, 107, 0.05));
+  padding: 80px 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   position: relative;
 }
 
@@ -151,18 +151,13 @@
   position: relative;
   margin: 60px 0;
   overflow: visible;
-  padding: 0 120px;
+  padding: 0 40px;
 }
 
 .carousel-wrapper {
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 32px;
-  background: rgba(30, 34, 54, 0.4);
-  backdrop-filter: blur(16px);
-  border: 2px solid rgba(255, 215, 0, 0.2);
-  box-shadow: 0 20px 60px rgba(31, 38, 135, 0.3);
 }
 
 .carousel-track {
@@ -194,7 +189,7 @@
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 40px rgba(31, 38, 135, 0.25);
   width: 100%;
-  max-width: 720px;
+  max-width: 1200px;
   min-height: 420px;
   height: auto;
   transform: scale(0.95);
